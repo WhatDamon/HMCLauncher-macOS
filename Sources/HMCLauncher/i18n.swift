@@ -30,7 +30,8 @@ enum L {
             "JAVA_VERSION_EXIT_CODE": "java -version failed with exit code: %@",
             "JAVA_VERSION_PARSER_ERROR": "Failed to read or parse java -version output",
             "JAVA_VERSION_ERROR": "Error running java -version:\n%@",
-            "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version"
+            "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version",
+            "CANNOT_FIND_HMCL": "HMCL not found, unable to run"
         ],
         .zhHans: [
             "ERROR_TITLE": "错误",
@@ -48,7 +49,8 @@ enum L {
             "JAVA_VERSION_EXIT_CODE": "执行 java -version 失败并返回代码: %@",
             "JAVA_VERSION_PARSER_ERROR": "格式化 java -version 输出失败",
             "JAVA_VERSION_ERROR": "执行 java -version 错误:\n%@",
-            "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本"
+            "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本",
+            "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行"
         ]
     ]
 
