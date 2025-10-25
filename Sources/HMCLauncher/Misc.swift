@@ -13,6 +13,7 @@ func downloadJava() {
     do {
         try process.run()
     } catch {
-        showDialog("Failed to open Java download link: \(error)")
+        print("Failed to open Java download link: \(error)")
+        showDialog(L.t("CANNOT_OPEN_JAVA_DOWNLOAD", "\(url)"))
     }
 }

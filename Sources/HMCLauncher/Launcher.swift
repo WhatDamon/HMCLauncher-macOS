@@ -8,4 +8,8 @@ func checkLauncherExistence() -> Bool {
     let standardizedPath = (resourcePath as NSString).standardizingPath
     return FileManager.default.fileExists(atPath: standardizedPath)
 }
- 
+
+// MARK: - Run Launcher
+func runLauncher(javaExec: String) {
+
+}

@@ -61,7 +61,6 @@ func findJavaExecutable(javaHome: String) -> String? {
 }
 
 // MARK: - Utility: Get Java Major Version
-/// Runs `java -version` and parses the major version number.
 func getJavaMajorVersion(javaExec: String) -> Int? {
     let task = Process()
     task.executableURL = URL(fileURLWithPath: javaExec)

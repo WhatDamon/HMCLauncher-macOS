@@ -71,9 +71,11 @@ struct HMCLauncher {
         // For test propose
         print("\(javaHomeUnwrapped), \(javaExec), \(javaMajorVersion)")
 
-        // Check HMCL
+        // Check and Run HMCL
         if checkLauncherExistence() == false {
             showDialog(L.t("CANNOT_FIND_HMCL"))
+        } else {
+            runLauncher(javaExec: javaExec)
         }
     }
 }

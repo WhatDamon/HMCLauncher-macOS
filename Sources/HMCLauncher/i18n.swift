@@ -31,6 +31,7 @@ enum L {
             "JAVA_VERSION_PARSER_ERROR": "Failed to read or parse java -version output",
             "JAVA_VERSION_ERROR": "Error running java -version:\n%@",
             "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version",
+            "CANNOT_OPEN_JAVA_DOWNLOAD": "Unable to open webpage.\nPlease visit %@ manually to download Java.",
             "CANNOT_FIND_HMCL": "HMCL not found, unable to run"
         ],
         .zhHans: [
@@ -39,7 +40,7 @@ enum L {
             "CANCEL_BUTTON": "取消",
             "JAVA_HOME_MISSING": "HMCL 需要 Java %@ 或更高版本才能运行",
             "JAVA_MISING_TITLE": "找不到 Java",
-            "HMCL_JAVA_HOME_INVALID": "HMCL_JAVA_HOME 所指向的 Java 路径无效，请更新或删除该变量。",
+            "HMCL_JAVA_HOME_INVALID": "HMCL_JAVA_HOME 所指向的 Java 路径无效，请更新或删除该变量",
             "JAVA_EXEC_NOT_FOUND": "未找到 Java 可执行文件！",
             "JAVA_TOO_OLD": "请升级到 Java %@ 或更高版本！\n当前版本: Java %@",
             "JAVA_NOT_SUPPORTED_TITLE": "Java 版本不受支持",
@@ -50,6 +51,7 @@ enum L {
             "JAVA_VERSION_PARSER_ERROR": "格式化 java -version 输出失败",
             "JAVA_VERSION_ERROR": "执行 java -version 错误:\n%@",
             "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本",
+            "CANNOT_OPEN_JAVA_DOWNLOAD": "无法打开网页,\n请手动访问 %@ 下载Java",
             "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行"
         ]
     ]
