@@ -18,6 +18,7 @@ func runLauncher(_ javaExec: String) {
 
     do {
         try process.run()
+        process.waitUntilExit()
     } catch {
         print("Failed to launch executable at \(javaExec): \(error)")
     }
