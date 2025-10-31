@@ -2,7 +2,8 @@ import Foundation
 
 // MARK: - Function: Open Java Download Page
 func downloadJava() {
-    let url: String = detectSystemArchitecture() == "ARM64"
+    let url: String =
+        detectSystemArchitecture() == "ARM64"
         ? urlJavaDownloadLinkArm64
         : urlJavaDownloadLinkX86_64
 

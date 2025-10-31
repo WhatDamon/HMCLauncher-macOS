@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Global Environment and Arguments
-let env: [String : String] = ProcessInfo.processInfo.environment
+let env: [String: String] = ProcessInfo.processInfo.environment
 let args: [String] = CommandLine.arguments
 
 // MARK: - HMCL Expection

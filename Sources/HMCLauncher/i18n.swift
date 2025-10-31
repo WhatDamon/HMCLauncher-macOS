@@ -9,7 +9,8 @@ enum L {
     }
 
     static let current: Language = {
-        let languages: [String]? = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String]
+        let languages: [String]? =
+            UserDefaults.standard.array(forKey: "AppleLanguages") as? [String]
         let primaryLang: String = languages?.first?.lowercased() ?? "en"
         return primaryLang.contains("zh") ? .zhHans : .en
     }()
@@ -22,13 +23,15 @@ enum L {
             "ERROR_OCCURRED": "An error has occurred:\n%@",
             "JAVA_HOME_MISSING": "HMCL requires Java %@ or later to run!",
             "JAVA_MISING_TITLE": "Missing Java",
-            "HMCL_JAVA_HOME_INVALID": "The Java path specified by HMCL_JAVA_HOME is invalid.\nPlease update it to a valid Java installation path or remove this environment variable.",
+            "HMCL_JAVA_HOME_INVALID":
+                "The Java path specified by HMCL_JAVA_HOME is invalid.\nPlease update it to a valid Java installation path or remove this environment variable.",
             "JAVA_EXEC_NOT_FOUND": "No java executable found!",
             "JAVA_TOO_OLD": "Please upgrade to Java %@ or above!\nYou are using Java %@",
             "JAVA_NOT_SUPPORTED_TITLE": "Java is not supported",
             "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version",
-            "CANNOT_OPEN_JAVA_DOWNLOAD": "Unable to open webpage.\nPlease visit %@ manually to download Java.",
-            "CANNOT_FIND_HMCL": "HMCL not found, unable to run"
+            "CANNOT_OPEN_JAVA_DOWNLOAD":
+                "Unable to open webpage.\nPlease visit %@ manually to download Java.",
+            "CANNOT_FIND_HMCL": "HMCL not found, unable to run",
         ],
         .zhHans: [
             "ERROR_TITLE": "错误",
@@ -43,12 +46,12 @@ enum L {
             "JAVA_NOT_SUPPORTED_TITLE": "Java 版本不受支持",
             "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本",
             "CANNOT_OPEN_JAVA_DOWNLOAD": "无法打开网页,\n请手动访问 %@ 下载Java",
-            "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行"
-        ]
+            "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行",
+        ],
     ]
 
     static func t(_ key: String, _ args: CVarArg...) -> String {
-        let table: [String : String] = localizedStrings[current] ?? [:]
+        let table: [String: String] = localizedStrings[current] ?? [:]
         let template: String = table[key] ?? localizedStrings[.en]?[key] ?? key
         return String(format: template, arguments: args)
     }

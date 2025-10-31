@@ -75,7 +75,10 @@ func getJavaMajorVersion(_ javaExec: String) -> Int? {
 
         guard task.terminationStatus == 0 else {
             print("java -version failed with exit code \(task.terminationStatus)")
-            showDialog(L.t("ERROR_OCCURED", "java -version failed with exit code \(task.terminationStatus)"))
+            showDialog(
+                L.t(
+                    "ERROR_OCCURED", "java -version failed with exit code \(task.terminationStatus)"
+                ))
             return nil
         }
 
@@ -91,7 +94,8 @@ func getJavaMajorVersion(_ javaExec: String) -> Int? {
         let line: String = String(firstLine)
         let regexPattern: String = #""([^"]+)""#
         if let regex: NSRegularExpression = try? NSRegularExpression(pattern: regexPattern),
-            let match: NSTextCheckingResult = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+            let match: NSTextCheckingResult = regex.firstMatch(
+                in: line, range: NSRange(line.startIndex..., in: line)),
             let range: Range<String.Index> = Range(match.range(at: 1), in: line)
         {
             let versionString: String = String(line[range])

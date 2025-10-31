@@ -13,16 +13,18 @@ let package = Package(
             name: "HMCLauncher",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
-                .unsafeFlags([
-                    "-whole-module-optimization",
-                    "-cross-module-optimization",
-                    "-enable-library-evolution",
-                ], .when(configuration: .release))
+                .unsafeFlags(
+                    [
+                        "-whole-module-optimization",
+                        "-cross-module-optimization",
+                        "-enable-library-evolution",
+                    ], .when(configuration: .release)),
             ],
             linkerSettings: [
-                .unsafeFlags([
-                    "-flto"
-                ], .when(configuration: .release))
+                .unsafeFlags(
+                    [
+                        "-flto"
+                    ], .when(configuration: .release))
             ]
         )
     ]
