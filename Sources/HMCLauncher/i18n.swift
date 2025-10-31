@@ -9,8 +9,9 @@ enum L {
     }
 
     static let current: Language = {
-        let locale: String = Locale.current.identifier.lowercased()
-        return locale.contains("zh") ? .zhHans : .en
+        let languages: [String]? = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String]
+        let primaryLang: String = languages?.first?.lowercased() ?? "en"
+        return primaryLang.contains("zh") ? .zhHans : .en
     }()
 
     private static let localizedStrings: [Language: [String: String]] = [
