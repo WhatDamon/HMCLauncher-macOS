@@ -118,14 +118,3 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
 
     return nil
 }
-
-// MARK: - Helper: Canonicalize File Path
-extension FileManager {
-    func canonicalizePath(_ path: String) throws -> String {
-        var result: String = path
-        if let resolved: String = try? self.destinationOfSymbolicLink(atPath: path) {
-            result = resolved
-        }
-        return (result as NSString).standardizingPath
-    }
-}
