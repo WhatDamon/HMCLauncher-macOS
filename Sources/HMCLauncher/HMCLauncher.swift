@@ -46,13 +46,13 @@ struct HMCLauncher {
         }
 
         // Find java executable
-        guard let javaExec: String = findJavaExecutable(javaHome: javaHomeUnwrapped) else {
+        guard let javaExec: String = findJavaExecutable(javaHomeUnwrapped) else {
             showDialog(L.t("JAVA_EXEC_NOT_FOUND"))
             return
         }
 
         // Get Java major version
-        let javaMajorVersion: Int = getJavaMajorVersion(javaExec: javaExec) ?? 0
+        let javaMajorVersion: Int = getJavaMajorVersion(javaExec) ?? 0
 
         // Validate Java version
         if javaMajorVersion < hmclExpectedJavaMajorVersion {
@@ -75,7 +75,7 @@ struct HMCLauncher {
         if checkLauncherExistence() == false {
             showDialog(L.t("CANNOT_FIND_HMCL"))
         } else {
-            runLauncher(javaExec: javaExec)
+            runLauncher(javaExec)
         }
     }
 }

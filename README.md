@@ -1,7 +1,9 @@
 # HMCLauncher for macOS
 
 > [!NOTE]
-> At least for now, this project is unrelated to [HMCL-dev](https://github.com/HMCL-dev/). If you are looking for HMCL (core), please visit [HMCL-dev/HMCL](https://github.com/HMCL-dev/HMCL/). For HMCLauncher for Windows, please visit [HMCL-dev/HMCLauncher](https://github.com/HMCL-dev/HMCLauncher/).
+> At least for now, this project is unrelated to [HMCL-dev](https://github.com/HMCL-dev/). 
+> 
+> If you are looking for HMCL (core), please visit [HMCL-dev/HMCL](https://github.com/HMCL-dev/HMCL/). For HMCLauncher for Windows, please visit [HMCL-dev/HMCLauncher](https://github.com/HMCL-dev/HMCLauncher/).
 
 > [!WARNING]
 > Still in heavy development.
@@ -10,11 +12,13 @@ HMCL Launcher for macOS.
 
 ## Build
 
+__REQUIRE MACOS TO BUILD!__
+
 ```bash
 swift build -c release --arch arm64 --arch x86_64
 ```
 
-This command will build a universal binary.
+This command will build a release universal binary.
 
 ## License
 

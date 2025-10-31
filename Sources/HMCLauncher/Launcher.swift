@@ -9,7 +9,7 @@ func checkLauncherExistence() -> Bool {
 
 // MARK: - Run Launcher
 
-func runLauncher(javaExec: String) {
+func runLauncher(_ javaExec: String) {
     let fullPath: String = getCWD(launcherPath)
 
     let process: Process = Process()

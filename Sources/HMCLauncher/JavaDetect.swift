@@ -25,17 +25,17 @@ func resolveJavaHome() -> String? {
         }
     } catch {
         print("Failed to resolve JAVA_HOME: \(error)")
-        showDialog(L.t("JAVA_RESOLVE_FAILED", "\(error)"))
+        showDialog(L.t("ERROR_OCCURRED", "\(error)"))
     }
 
     return nil
 }
 
 // MARK: - Utility: Find Java Executable
-func findJavaExecutable(javaHome: String) -> String? {
+func findJavaExecutable(_ javaHome: String) -> String? {
     guard let normalizedPath: String = try? FileManager.default.canonicalizePath(javaHome) else {
         print("Failed to canonicalize JAVA_HOME: \(javaHome)")
-        showDialog(L.t("JAVA_CANONICALIZE_FAILED", "\(javaHome)"))
+        showDialog(L.t("ERROR_OCCURRED", "Failed to canonicalize JAVA_HOME:\n\(javaHome)"))
         return nil
     }
 
@@ -56,12 +56,12 @@ func findJavaExecutable(javaHome: String) -> String? {
     }
 
     print("No java executable found at: \(javaHome)")
-    showDialog(L.t("JAVA_EXEC_NOT_FOUND_AT", "\(javaHome)"))
+    showDialog(L.t("ERROR_OCCURED", "No java executable found at:\n\(javaHome)"))
     return nil
 }
 
 // MARK: - Utility: Get Java Major Version
-func getJavaMajorVersion(javaExec: String) -> Int? {
+func getJavaMajorVersion(_ javaExec: String) -> Int? {
     let task: Process = Process()
     task.executableURL = URL(fileURLWithPath: javaExec)
     task.arguments = ["-version"]
@@ -75,7 +75,7 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
 
         guard task.terminationStatus == 0 else {
             print("java -version failed with exit code \(task.terminationStatus)")
-            showDialog(L.t("JAVA_VERSION_EXIT_CODE", "\(task.terminationStatus)"))
+            showDialog(L.t("ERROR_OCCURED", "java -version failed with exit code \(task.terminationStatus)"))
             return nil
         }
 
@@ -84,7 +84,7 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
             let firstLine: String.SubSequence = output.split(separator: "\n").first
         else {
             print("Failed to read or parse java -version output")
-            showDialog(L.t("JAVA_VERSION_PARSER_ERROR"))
+            showDialog(L.t("ERROR_OCCURRED", "Failed to read or parse java -version output"))
             return nil
         }
 
@@ -113,7 +113,7 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
 
     } catch {
         print("Error running java -version: \(error)")
-        showDialog(L.t("JAVA_VERSION_ERROR", "\(error)"))
+        showDialog(L.t("ERROR_OCCURRED", "\(error)"))
     }
 
     return nil
