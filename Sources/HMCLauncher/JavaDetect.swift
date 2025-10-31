@@ -2,22 +2,22 @@ import Foundation
 
 // MARK: - Utility: Resolve JAVA_HOME
 func resolveJavaHome() -> String? {
-    if let javaHome = env["JAVA_HOME"], !javaHome.isEmpty {
+    if let javaHome: String = env["JAVA_HOME"], !javaHome.isEmpty {
         return javaHome
     }
 
-    let process = Process()
+    let process: Process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
 
-    let pipe = Pipe()
+    let pipe: Pipe = Pipe()
     process.standardOutput = pipe
     process.standardError = Pipe()
 
     do {
         try process.run()
         process.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        if let output = String(data: data, encoding: .utf8)?
+        let data: Data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let output: String = String(data: data, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !output.isEmpty
         {
@@ -33,24 +33,24 @@ func resolveJavaHome() -> String? {
 
 // MARK: - Utility: Find Java Executable
 func findJavaExecutable(javaHome: String) -> String? {
-    guard let normalizedPath = try? FileManager.default.canonicalizePath(javaHome) else {
+    guard let normalizedPath: String = try? FileManager.default.canonicalizePath(javaHome) else {
         print("Failed to canonicalize JAVA_HOME: \(javaHome)")
         showDialog(L.t("JAVA_CANONICALIZE_FAILED", "\(javaHome)"))
         return nil
     }
 
-    let candidatePaths = [
+    let candidatePaths: [String] = [
         normalizedPath + "/bin/java",
         normalizedPath + "/Contents/Home/bin/java",
         normalizedPath + "/Home/bin/java",
     ]
 
-    for path in candidatePaths where FileManager.default.fileExists(atPath: path) {
+    for path: String in candidatePaths where FileManager.default.fileExists(atPath: path) {
         return path
     }
 
     // Fallback check
-    let fallback = normalizedPath + "/bin/java"
+    let fallback: String = normalizedPath + "/bin/java"
     if FileManager.default.fileExists(atPath: fallback) {
         return fallback
     }
@@ -62,11 +62,11 @@ func findJavaExecutable(javaHome: String) -> String? {
 
 // MARK: - Utility: Get Java Major Version
 func getJavaMajorVersion(javaExec: String) -> Int? {
-    let task = Process()
+    let task: Process = Process()
     task.executableURL = URL(fileURLWithPath: javaExec)
     task.arguments = ["-version"]
 
-    let errorPipe = Pipe()
+    let errorPipe: Pipe = Pipe()
     task.standardError = errorPipe
 
     do {
@@ -79,33 +79,33 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
             return nil
         }
 
-        let data = errorPipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8),
-            let firstLine = output.split(separator: "\n").first
+        let data: Data = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output: String = String(data: data, encoding: .utf8),
+            let firstLine: String.SubSequence = output.split(separator: "\n").first
         else {
             print("Failed to read or parse java -version output")
             showDialog(L.t("JAVA_VERSION_PARSER_ERROR"))
             return nil
         }
 
-        let line = String(firstLine)
-        let regexPattern = #""([^"]+)""#
-        if let regex = try? NSRegularExpression(pattern: regexPattern),
-            let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
-            let range = Range(match.range(at: 1), in: line)
+        let line: String = String(firstLine)
+        let regexPattern: String = #""([^"]+)""#
+        if let regex: NSRegularExpression = try? NSRegularExpression(pattern: regexPattern),
+            let match: NSTextCheckingResult = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+            let range: Range<String.Index> = Range(match.range(at: 1), in: line)
         {
-            let versionString = String(line[range])
-            let components = versionString.split(separator: ".", maxSplits: 1)
+            let versionString: String = String(line[range])
+            let components: [String.SubSequence] = versionString.split(separator: ".", maxSplits: 1)
 
             if components.first == "1" {
                 if components.count > 1,
-                    let minor = components[1].split(separator: ".").first,
-                    let major = Int(minor)
+                    let minor: Substring.SubSequence = components[1].split(separator: ".").first,
+                    let major: Int = Int(minor)
                 {
                     return major
                 }
             } else {
-                if let major = Int(components[0]) {
+                if let major: Int = Int(components[0]) {
                     return major
                 }
             }
@@ -122,8 +122,8 @@ func getJavaMajorVersion(javaExec: String) -> Int? {
 // MARK: - Helper: Canonicalize File Path
 extension FileManager {
     func canonicalizePath(_ path: String) throws -> String {
-        var result = path
-        if let resolved = try? self.destinationOfSymbolicLink(atPath: path) {
+        var result: String = path
+        if let resolved: String = try? self.destinationOfSymbolicLink(atPath: path) {
             result = resolved
         }
         return (result as NSString).standardizingPath

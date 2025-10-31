@@ -9,7 +9,7 @@ enum L {
     }
 
     static let current: Language = {
-        let locale = Locale.current.identifier.lowercased()
+        let locale: String = Locale.current.identifier.lowercased()
         return locale.contains("zh") ? .zhHans : .en
     }()
 
@@ -57,8 +57,8 @@ enum L {
     ]
 
     static func t(_ key: String, _ args: CVarArg...) -> String {
-        let table = localizedStrings[current] ?? [:]
-        let template = table[key] ?? localizedStrings[.en]?[key] ?? key
+        let table: [String : String] = localizedStrings[current] ?? [:]
+        let template: String = table[key] ?? localizedStrings[.en]?[key] ?? key
         return String(format: template, arguments: args)
     }
 }

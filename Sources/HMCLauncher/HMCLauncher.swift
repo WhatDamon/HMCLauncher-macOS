@@ -8,7 +8,7 @@ struct HMCLauncher {
         var javaHome: String? = nil
 
         // HMCL_JAVA_HOME first
-        if let hmclJavaHome = env["HMCL_JAVA_HOME"], !hmclJavaHome.isEmpty {
+        if let hmclJavaHome: String = env["HMCL_JAVA_HOME"], !hmclJavaHome.isEmpty {
             if FileManager.default.fileExists(atPath: hmclJavaHome) {
                 javaHome = hmclJavaHome
             } else {
@@ -30,7 +30,7 @@ struct HMCLauncher {
         }
 
         // Ensure javaHome is valid
-        guard let javaHomeUnwrapped = javaHome,
+        guard let javaHomeUnwrapped: String = javaHome,
             FileManager.default.fileExists(atPath: javaHomeUnwrapped)
         else {
             showDialog(
@@ -46,13 +46,13 @@ struct HMCLauncher {
         }
 
         // Find java executable
-        guard let javaExec = findJavaExecutable(javaHome: javaHomeUnwrapped) else {
+        guard let javaExec: String = findJavaExecutable(javaHome: javaHomeUnwrapped) else {
             showDialog(L.t("JAVA_EXEC_NOT_FOUND"))
             return
         }
 
         // Get Java major version
-        let javaMajorVersion = getJavaMajorVersion(javaExec: javaExec) ?? 0
+        let javaMajorVersion: Int = getJavaMajorVersion(javaExec: javaExec) ?? 0
 
         // Validate Java version
         if javaMajorVersion < hmclExpectedJavaMajorVersion {

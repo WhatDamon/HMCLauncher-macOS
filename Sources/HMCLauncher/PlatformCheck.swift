@@ -2,16 +2,16 @@ import Foundation
 
 // MARK: - Utility: Detect System Architecture
 func detectSystemArchitecture() -> String {
-    var sysinfo = utsname()
+    var sysinfo: utsname = utsname()
     uname(&sysinfo)
 
-    let machineMirror = Mirror(reflecting: sysinfo.machine)
-    let identifier = machineMirror.children.reduce("") { identifier, element in
-        guard let value = element.value as? Int8, value != 0 else { return identifier }
+    let machineMirror: Mirror = Mirror(reflecting: sysinfo.machine)
+    let identifier: String = machineMirror.children.reduce("") { identifier, element in
+        guard let value: Int8 = element.value as? Int8, value != 0 else { return identifier }
         return identifier + String(UnicodeScalar(UInt8(value)))
     }
 
-    let lower = identifier.lowercased()
+    let lower: String = identifier.lowercased()
     if lower.contains("arm") || lower.contains("aarch64") {
         return "ARM64"
     } else {
