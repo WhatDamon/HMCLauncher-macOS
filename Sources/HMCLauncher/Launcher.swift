@@ -10,9 +10,9 @@ func checkLauncherExistence() -> Bool {
 // MARK: - Run Launcher
 
 func runLauncher(_ javaExec: String) {
-    let fullPath: String = getCWD(launcherPath)
+    let fullPath: String = getExecutablePath(launcherPath)
 
-    let process: Process = Process()
+    let process = Process()
     process.executableURL = URL(fileURLWithPath: javaExec)
     process.arguments = ["-jar", fullPath] + Array(args.dropFirst())
 

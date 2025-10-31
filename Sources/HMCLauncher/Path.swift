@@ -8,14 +8,6 @@ func getExecutablePath(_ relativePath: String) -> String {
     return (fullPath as NSString).standardizingPath
 }
 
-//MARK: - Helper: Get CWD
-func getCWD(_ relativePath: String) -> String {
-    let cwd = FileManager.default.currentDirectoryPath
-    let fullPath = URL(fileURLWithPath: relativePath, relativeTo: URL(fileURLWithPath: cwd))
-        .standardized.path
-    return fullPath
-}
-
 // MARK: - Helper: Canonicalize File Path
 extension FileManager {
     func canonicalizePath(_ path: String) throws -> String {
