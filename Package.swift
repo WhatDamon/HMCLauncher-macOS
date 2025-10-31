@@ -5,11 +5,25 @@ import PackageDescription
 
 let package = Package(
     name: "HMCLauncher",
+    platforms: [
+        .macOS(.v10_13)
+    ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
-            name: "HMCLauncher"
-        ),
+            name: "HMCLauncher",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug)),
+                .unsafeFlags([
+                    "-whole-module-optimization",
+                    "-cross-module-optimization",
+                    "-enable-library-evolution",
+                ], .when(configuration: .release))
+            ],
+            linkerSettings: [
+                .unsafeFlags([
+                    "-flto"
+                ], .when(configuration: .release))
+            ]
+        )
     ]
 )
