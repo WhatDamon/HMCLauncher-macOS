@@ -48,7 +48,7 @@ struct HMCLauncher {
 
         // Find java executable
         guard let javaExec: String = findJavaExecutable(javaHomeUnwrapped) else {
-            showDialog(L.t("JAVA_EXEC_NOT_FOUND"), isWarning: true)
+            showDialog(L.t("ERROR_OCCURRED", "No java executable found!"), isWarning: true)
             return
         }
 

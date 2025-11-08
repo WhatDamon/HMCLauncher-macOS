@@ -25,7 +25,6 @@ enum L {
             "JAVA_MISING_TITLE": "Missing Java",
             "HMCL_JAVA_HOME_INVALID":
                 "The Java path specified by HMCL_JAVA_HOME is invalid.\nPlease update it to a valid Java installation path or remove this environment variable.",
-            "JAVA_EXEC_NOT_FOUND": "No java executable found!",
             "JAVA_TOO_OLD": "Please upgrade to Java %@ or above!\nYou are using Java %@",
             "JAVA_NOT_SUPPORTED_TITLE": "Java is not supported",
             "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version",
@@ -41,7 +40,6 @@ enum L {
             "JAVA_HOME_MISSING": "HMCL 需要 Java %@ 或更高版本才能运行",
             "JAVA_MISING_TITLE": "找不到 Java",
             "HMCL_JAVA_HOME_INVALID": "HMCL_JAVA_HOME 所指向的 Java 路径无效，请更新或删除该变量",
-            "JAVA_EXEC_NOT_FOUND": "未找到 Java 可执行文件！",
             "JAVA_TOO_OLD": "请升级到 Java %@ 或更高版本！\n当前版本: Java %@",
             "JAVA_NOT_SUPPORTED_TITLE": "Java 版本不受支持",
             "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本",
