@@ -25,7 +25,7 @@ func resolveJavaHome() -> String? {
         }
     } catch {
         print("Failed to resolve JAVA_HOME: \(error)")
-        showDialog(L.t("ERROR_OCCURRED", "\(error)"))
+        showDialog(L.t("ERROR_OCCURRED", "\(error)"), isWarning: true)
     }
 
     return nil
@@ -35,7 +35,9 @@ func resolveJavaHome() -> String? {
 func findJavaExecutable(_ javaHome: String) -> String? {
     guard let normalizedPath: String = try? FileManager.default.canonicalizePath(javaHome) else {
         print("Failed to canonicalize JAVA_HOME: \(javaHome)")
-        showDialog(L.t("ERROR_OCCURRED", "Failed to canonicalize JAVA_HOME:\n\(javaHome)"))
+        showDialog(
+            L.t("ERROR_OCCURRED", "Failed to canonicalize JAVA_HOME:\n\(javaHome)"), isWarning: true
+        )
         return nil
     }
 
@@ -56,7 +58,7 @@ func findJavaExecutable(_ javaHome: String) -> String? {
     }
 
     print("No java executable found at: \(javaHome)")
-    showDialog(L.t("ERROR_OCCURED", "No java executable found at:\n\(javaHome)"))
+    showDialog(L.t("ERROR_OCCURED", "No java executable found at:\n\(javaHome)"), isWarning: true)
     return nil
 }
 
@@ -78,7 +80,8 @@ func getJavaMajorVersion(_ javaExec: String) -> Int? {
             showDialog(
                 L.t(
                     "ERROR_OCCURED", "java -version failed with exit code \(task.terminationStatus)"
-                ))
+                ),
+                isWarning: true)
             return nil
         }
 
@@ -87,7 +90,9 @@ func getJavaMajorVersion(_ javaExec: String) -> Int? {
             let firstLine: String.SubSequence = output.split(separator: "\n").first
         else {
             print("Failed to read or parse java -version output")
-            showDialog(L.t("ERROR_OCCURRED", "Failed to read or parse java -version output"))
+            showDialog(
+                L.t("ERROR_OCCURRED", "Failed to read or parse java -version output"),
+                isWarning: true)
             return nil
         }
 
@@ -117,7 +122,7 @@ func getJavaMajorVersion(_ javaExec: String) -> Int? {
 
     } catch {
         print("Error running java -version: \(error)")
-        showDialog(L.t("ERROR_OCCURRED", "\(error)"))
+        showDialog(L.t("ERROR_OCCURRED", "\(error)"), isWarning: true)
     }
 
     return nil

@@ -14,7 +14,8 @@ struct HMCLauncher {
             } else {
                 showDialog(
                     L.t("HMCL_JAVA_HOME_INVALID"),
-                    title: L.t("WARNING_TITLE")
+                    title: L.t("WARNING_TITLE"),
+                    isWarning: true
                 )
             }
         }
@@ -47,7 +48,7 @@ struct HMCLauncher {
 
         // Find java executable
         guard let javaExec: String = findJavaExecutable(javaHomeUnwrapped) else {
-            showDialog(L.t("JAVA_EXEC_NOT_FOUND"))
+            showDialog(L.t("JAVA_EXEC_NOT_FOUND"), isWarning: true)
             return
         }
 
@@ -59,7 +60,8 @@ struct HMCLauncher {
             showDialog(
                 L.t("JAVA_TOO_OLD", "\(hmclExpectedJavaMajorVersion)", "\(javaMajorVersion)"),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
-                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")]
+                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
+                isWarning: true
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
                     downloadJava()

@@ -15,6 +15,6 @@ func downloadJava() {
         try process.run()
     } catch {
         print("Failed to open Java download link: \(error)")
-        showDialog(L.t("CANNOT_OPEN_JAVA_DOWNLOAD", "\(url)"))
+        showDialog(L.t("CANNOT_OPEN_JAVA_DOWNLOAD", "\(url)"), isWarning: true)
     }
 }
