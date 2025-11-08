@@ -30,6 +30,8 @@ struct HMCLauncher {
             }
         }
 
+        // I think the following 2 funcs should move to `JavaDetect.swift`
+
         // Ensure javaHome is valid
         guard let javaHomeUnwrapped: String = javaHome,
             FileManager.default.fileExists(atPath: javaHomeUnwrapped)
