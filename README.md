@@ -7,6 +7,8 @@
 
 > [!WARNING]
 > Still in heavy development.
+>
+> Due to some reasons, using this project as the launcher of HMCL in macOS App Bundle may face some problems. [Learn More](https://github.com/HMCL-dev/HMCL/issues/4765)
 
 HMCL Launcher for macOS.
 
