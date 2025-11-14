@@ -32,11 +32,11 @@ func resolveJavaHome() -> String? {
 }
 
 // MARK: - Utility: Find Java Executable
-func findJavaExecutable(_ javaHome: String) -> String? {
-    guard let normalizedPath: String = try? FileManager.default.canonicalizePath(javaHome) else {
-        print("Failed to canonicalize JAVA_HOME: \(javaHome)")
+func findJavaExecutable(_ javaHome: String?) -> String? {
+    guard let normalizedPath: String = try? FileManager.default.canonicalizePath(javaHome!) else {
+        print("Failed to canonicalize JAVA_HOME: \(javaHome!)")
         showDialog(
-            L.t("ERROR_OCCURRED", "Failed to canonicalize JAVA_HOME:\n\(javaHome)"), isWarning: true
+            L.t("ERROR_OCCURRED", "Failed to canonicalize JAVA_HOME:\n\(javaHome!)"), isWarning: true
         )
         return nil
     }
@@ -57,8 +57,8 @@ func findJavaExecutable(_ javaHome: String) -> String? {
         return fallback
     }
 
-    print("No java executable found at: \(javaHome)")
-    showDialog(L.t("ERROR_OCCURED", "No java executable found at:\n\(javaHome)"), isWarning: true)
+    print("No java executable found at: \(javaHome!)")
+    showDialog(L.t("ERROR_OCCURED", "No java executable found at:\n\(javaHome!)"), isWarning: true)
     return nil
 }
 

@@ -30,12 +30,8 @@ struct HMCLauncher {
             }
         }
 
-        // I think the following 2 funcs should move to `JavaDetect.swift`
-
         // Ensure javaHome is valid
-        guard let javaHomeUnwrapped: String = javaHome,
-            FileManager.default.fileExists(atPath: javaHomeUnwrapped)
-        else {
+        if !FileManager.default.fileExists(atPath: javaHome!) {
             showDialog(
                 L.t("JAVA_HOME_MISSING", "\(hmclExpectedJavaMajorVersion)"),
                 title: L.t("JAVA_MISSING_TITLE"),
@@ -49,7 +45,7 @@ struct HMCLauncher {
         }
 
         // Find java executable
-        guard let javaExec: String = findJavaExecutable(javaHomeUnwrapped) else {
+        guard let javaExec: String = findJavaExecutable(javaHome) else {
             showDialog(L.t("ERROR_OCCURRED", "No java executable found!"), isWarning: true)
             return
         }
@@ -73,7 +69,7 @@ struct HMCLauncher {
         }
 
         // For test propose
-        print("\(javaHomeUnwrapped), \(javaExec), \(javaMajorVersion)")
+        print("\(javaHome!), \(javaExec), \(javaMajorVersion)")
 
         // Check and Run HMCL
         if checkLauncherExistence() == false {
