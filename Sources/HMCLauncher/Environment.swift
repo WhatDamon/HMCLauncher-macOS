@@ -3,6 +3,8 @@ import Foundation
 // MARK: - Global Environment and Arguments
 let env: [String: String] = ProcessInfo.processInfo.environment
 let args: [String] = CommandLine.arguments
+let isDebug: Bool = args.contains("--debug")
+let launcherVer: String = "3.8.0"
 
 // MARK: - HMCL Expection
 let hmclExpectedJavaMajorVersion: Int = 17

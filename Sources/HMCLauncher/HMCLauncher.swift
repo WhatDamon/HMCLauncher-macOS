@@ -4,6 +4,9 @@ import Foundation
 @main
 struct HMCLauncher {
     static func main() {
+        // Start
+        DebugLogger.log("HMCLauncher-macOS \(launcherVer) Start")
+
         // Resolve JAVA_HOME
         var javaHome: String? = nil
 
