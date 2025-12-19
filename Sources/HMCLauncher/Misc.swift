@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Function: Open Java Download Page
 func downloadJava() {
     let url: String =
-        detectSystemArchitecture() == "ARM64"
+        currentArch() == "arm64"
         ? urlJavaDownloadLinkArm64
         : urlJavaDownloadLinkX86_64
 

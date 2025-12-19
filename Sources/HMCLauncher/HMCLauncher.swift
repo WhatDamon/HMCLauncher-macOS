@@ -4,81 +4,25 @@ import Foundation
 @main
 struct HMCLauncher {
     static func main() {
-        // Start
         DebugLogger.log("HMCLauncher-macOS \(launcherVer) Start")
 
-        // Resolve JAVA_HOME
-        var javaHome: String? = nil
-
-        // HMCL_JAVA_HOME first
-        if let hmclJavaHome: String = env["HMCL_JAVA_HOME"], !hmclJavaHome.isEmpty {
-            if FileManager.default.fileExists(atPath: hmclJavaHome) {
-                javaHome = hmclJavaHome
-            } else {
-                showDialog(
-                    L.t("HMCL_JAVA_HOME_INVALID"),
-                    title: L.t("WARNING_TITLE"),
-                    isWarning: true
-                )
+        do {
+            let source = try selectJavaHome()
+            let javaHome: String
+            switch source {
+            case .environment(let path):
+                print("Specific JAVA_HOME: \(path)")
+                javaHome = path
+            case .autoDetected(let path):
+                print("Auto select JAVA_HOME: \(path)")
+                javaHome = path
             }
-        }
-
-        // Fallback or no HMCL_JAVA_HOME
-        if javaHome == nil {
-            javaHome = env["JAVA_HOME"]
-            if javaHome == nil || javaHome!.isEmpty
-                || !FileManager.default.fileExists(atPath: javaHome!)
-            {
-                javaHome = resolveJavaHome()
-            }
-        }
-
-        // Ensure javaHome is valid
-        if !FileManager.default.fileExists(atPath: javaHome!) {
-            showDialog(
-                L.t("JAVA_HOME_MISSING", "\(hmclExpectedJavaMajorVersion)"),
-                title: L.t("JAVA_MISSING_TITLE"),
-                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")]
-            ) { button in
-                if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    downloadJava()
-                }
-            }
-            return
-        }
-
-        // Find java executable
-        guard let javaExec: String = findJavaExecutable(javaHome) else {
-            showDialog(L.t("ERROR_OCCURRED", "No java executable found!"), isWarning: true)
-            return
-        }
-
-        // Get Java major version
-        let javaMajorVersion: Int = getJavaMajorVersion(javaExec) ?? 0
-
-        // Validate Java version
-        if javaMajorVersion < hmclExpectedJavaMajorVersion {
-            showDialog(
-                L.t("JAVA_TOO_OLD", "\(hmclExpectedJavaMajorVersion)", "\(javaMajorVersion)"),
-                title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
-                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
-                isWarning: true
-            ) { button in
-                if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    downloadJava()
-                }
-            }
-            return
-        }
-
-        // For test propose
-        print("\(javaHome!), \(javaExec), \(javaMajorVersion)")
-
-        // Check and Run HMCL
-        if checkLauncherExistence() == false {
-            showDialog(L.t("CANNOT_FIND_HMCL"))
-        } else {
-            runLauncher(javaExec)
+        } catch let e as JavaSelectionError {
+            print(e.description)
+            exit(1)
+        } catch {
+            print("Unknown error: \(error)")
+            exit(1)
         }
     }
 }

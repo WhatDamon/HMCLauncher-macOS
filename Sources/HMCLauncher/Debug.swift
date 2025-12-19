@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Utility: Debug Logger
 struct DebugLogger {
-    static let logURL: URL? = nil // need to be considered
+    static let logURL: URL? = nil  // need to be considered
 
     static func log(_ message: String) {
         guard isDebug, let logURL: URL else { return }

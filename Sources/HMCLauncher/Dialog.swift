@@ -12,7 +12,7 @@ func showDialog(
     let defaultButton: String = "\"\(buttons.first ?? "OK")\""
     var styleArg: String = ""
 
-    if isWarning == true{
+    if isWarning == true {
         styleArg = "as critical"
     }
 
