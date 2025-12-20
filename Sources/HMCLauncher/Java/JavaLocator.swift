@@ -133,9 +133,6 @@ func selectJavaHome(minVersion: JavaVersion = JavaVersion(from: "\(hmclExpectedJ
     {
         return try validateJavaAtPath(path, minVersion: minVersion)
     }
-    if let path = env["JAVA_HOME"], !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        return try validateJavaAtPath(path, minVersion: minVersion)
-    }
 
     // Automatic
     let all = findAllJavaInstallations()
