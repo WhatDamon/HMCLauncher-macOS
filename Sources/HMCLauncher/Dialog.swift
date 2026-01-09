@@ -8,40 +8,44 @@ func showDialog(
     isWarning: Bool = false,
     onButtonPressed: ((String) -> Void)? = nil
 ) {
-    let buttonsList: String = buttons.map { "\"\($0)\"" }.joined(separator: ", ")
-    let defaultButton: String = "\"\(buttons.first ?? "OK")\""
-    var styleArg: String = ""
+    let buttonsList = buttons.map { "\"\($0)\"" }.joined(separator: ", ")
+    let defaultButton = "\"\(buttons.first ?? "OK")\""
+    let styleArg = isWarning ? "as critical" : ""
 
-    if isWarning == true {
-        styleArg = "as critical"
-    }
-
-    let script: String = """
+    let script = """
         set response to display alert "\(title)" message "\(message)" \(styleArg) buttons {\(buttonsList)} default button \(defaultButton)
         return button returned of response
         """
 
-    let process: Process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-    process.arguments = ["-e", script]
+    let dirs = [
+        URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
+        URL(fileURLWithPath: FileManager.default.currentDirectoryPath).deletingLastPathComponent(),
+        URL(fileURLWithPath: FileManager.default.currentDirectoryPath).deletingLastPathComponent()
+            .deletingLastPathComponent(),
+    ]
 
-    let pipe: Pipe = Pipe()
-    process.standardOutput = pipe
-    process.standardError = Pipe()
+    for dir in dirs {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", script]
+        process.currentDirectoryURL = dir
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
 
-    do {
-        try process.run()
-        process.waitUntilExit()
-
-        let data: Data = pipe.fileHandleForReading.readDataToEndOfFile()
-        if let output: String = String(data: data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            !output.isEmpty
-        {
-            print("Button pressed: \(output)")
-            onButtonPressed?(output)
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                !output.isEmpty
+            {
+                print("Button pressed: \(output) (executed in \(dir.path))")
+                onButtonPressed?(output)
+            }
+        } catch {
+            print("Failed to show dialog in \(dir.path): \(error)")
         }
-    } catch {
-        print("Failed to show dialog: \(error)")
     }
 }

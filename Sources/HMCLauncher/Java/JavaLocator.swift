@@ -6,160 +6,186 @@ enum JavaHomeSource {
     case autoDetected(path: String)
 }
 
-// MARK: - Custom Errors
-enum JavaSelectionError: Error, CustomStringConvertible {
-    case invalidJavaHome(reason: String)
+// MARK: - Errors
+enum JavaSelectionError: Error {
+    case invalidJavaHome
     case userSpecifiedJavaVersionTooLow(
         path: String, detectedVersion: String, required: JavaVersion)
     case noJavaInstalled
     case newestTooLow(found: JavaInstallation, required: JavaVersion)
     case noCompatibleJava(arch: String, minVer: JavaVersion, all: [JavaInstallation])
     case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion, arm64List: [JavaInstallation])
-
-    var description: String {
-        switch self {
-        case .invalidJavaHome(let reason):
-            return "The specified JAVA_HOME is invalid: \(reason)"
-        case .userSpecifiedJavaVersionTooLow(let path, let ver, let req):
-            return "The specified Java version is low: \(ver) < \(req)(Path: \(path))"
-        case .noJavaInstalled:
-            return "No Java found."
-        case .newestTooLow(let f, let r):
-            return
-                "The newest installed Java (\(f.versionStr)) is lower than requirement: Java \(r)）"
-        case .noCompatibleJava(let arch, let min, let all):
-            _ = all.map { "- \($0.versionStr) (\($0.arch)) @ \($0.path)" }.joined(
-                separator: "\n  ")
-            return
-                "No compatiable Java >= \(min) \(arch) build found"
-        case .noArm64OnNewMacOS(let d, let min, let arm64s):
-            _ =
-                arm64s.isEmpty
-                ? "(EMPTY)"
-                : arm64s.map { "- \($0.versionStr) @ \($0.path)" }.joined(separator: "\n  ")
-            return
-                "Rosetta 2 has been desperated in Darwin \(d), please use >= Java \(min) arm64 build"
-        }
-    }
 }
 
-// MARK: - Utility: Extract Java Version
-func extractVersion(fromJavaVersionOutput output: String) -> String? {
-    let lines = output.split(separator: "\n")
-    for line in lines {
-        let s = String(line)
-        if s.contains("version") {
-            let components = s.components(separatedBy: "\"")
-            if components.count >= 2 {
-                return components[1]
-            }
-        }
+// MARK: - Version Extraction
+private func extractJavaVersion(from output: String) -> String? {
+    let version =
+        output
+        .split(separator: "\n")
+        .first { $0.contains("version") }?
+        .split(separator: "\"")
+        .dropFirst()
+        .first
+        .map(String.init)
+
+    if let v = version {
+        DebugLogger.log("Extracted Java version string: \(v)", level: .debug)
+    } else {
+        DebugLogger.log("Failed to extract Java version from output", level: .warn)
     }
-    return nil
+
+    return version
 }
 
-// MARK: - Verify the user-specified JAVA_HOME
-func findJavaExecutable(in basePath: String) -> String? {
+// MARK: - JAVA_HOME Validation
+private func findJavaExecutable(in base: String) -> String? {
     let fm = FileManager.default
     let candidates = [
-        (basePath as NSString).appendingPathComponent("bin/java"),
-        (basePath as NSString).appendingPathComponent("Contents/Home/bin/java"),
-        (basePath as NSString).appendingPathComponent("Home/bin/java")
-    ]
-    
-    for path in candidates {
-        if fm.fileExists(atPath: path) && fm.isExecutableFile(atPath: path) {
-            return path
-        }
+        "bin/java",
+        "Contents/Home/bin/java",
+        "Home/bin/java",
+    ].map { (base as NSString).appendingPathComponent($0) }
+
+    let executable = candidates.first { fm.isExecutableFile(atPath: $0) }
+
+    if let exe = executable {
+        DebugLogger.log("Found Java executable at \(exe)", level: .debug)
+    } else {
+        DebugLogger.log("No Java executable found in \(base)", level: .warn)
     }
-    return nil
+
+    return executable
 }
 
-func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) throws -> JavaHomeSource {
-    guard let javaExec = findJavaExecutable(in: basePath) else {
-        throw JavaSelectionError.invalidJavaHome(reason: "Cannot find JAVA_HOME at \(basePath)")
+func validateJavaAtPath(
+    _ basePath: String,
+    minVersion: JavaVersion
+) throws -> JavaHomeSource {
+
+    DebugLogger.log("Validating JAVA_HOME at: \(basePath)", level: .info)
+
+    guard let java = findJavaExecutable(in: basePath) else {
+        DebugLogger.log("Validation failed: JAVA_HOME missing executable", level: .warn)
+        throw JavaSelectionError.invalidJavaHome
     }
 
-    let task = Process(), pipe = Pipe()
-    task.executableURL = URL(fileURLWithPath: javaExec)
-    task.arguments = ["-version"]
-    task.standardOutput = nil
-    task.standardError = pipe
-    task.standardInput = nil
+    let p = Process()
+    let pipe = Pipe()
+    p.executableURL = URL(fileURLWithPath: java)
+    p.arguments = ["-version"]
+    p.standardError = pipe
 
     do {
-        try task.run()
-        task.waitUntilExit()
-        guard task.terminationStatus == 0 else {
-            throw JavaSelectionError.invalidJavaHome(reason: "Error while running \(javaExec), Exit code: \(task.terminationStatus)")
+        DebugLogger.log("Running '\(java) -version'", level: .debug)
+        try p.run()
+        p.waitUntilExit()
+
+        guard p.terminationStatus == 0 else {
+            DebugLogger.log("Process terminated with status \(p.terminationStatus)", level: .warn)
+            throw JavaSelectionError.invalidJavaHome
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else {
-            throw JavaSelectionError.invalidJavaHome(reason: "Cannot read the output of \(javaExec)")
+        guard
+            let out = String(data: data, encoding: .utf8),
+            let verStr = extractJavaVersion(from: out),
+            let ver = JavaVersion(from: verStr)
+        else {
+            DebugLogger.log("Failed to parse Java version from output", level: .warn)
+            throw JavaSelectionError.invalidJavaHome
         }
 
-        guard let versionStr = extractVersion(fromJavaVersionOutput: output) else {
-            throw JavaSelectionError.invalidJavaHome(reason: "Cannot extract version from output")
-        }
+        DebugLogger.log("Detected Java version \(ver) at \(basePath)", level: .info)
 
-        guard let detectedVersion = JavaVersion(from: versionStr) else {
-            throw JavaSelectionError.invalidJavaHome(reason: "Cannot parser version string: \(versionStr)")
-        }
-
-        if detectedVersion >= minVersion {
-            return .environment(path: basePath)
-        } else {
+        guard ver >= minVersion else {
+            DebugLogger.log(
+                "Detected version \(ver) < required \(minVersion)", level: .warn
+            )
             throw JavaSelectionError.userSpecifiedJavaVersionTooLow(
                 path: basePath,
-                detectedVersion: versionStr,
+                detectedVersion: verStr,
                 required: minVersion
             )
         }
-    } catch let error as JavaSelectionError {
-        throw error
+
+        DebugLogger.log("JAVA_HOME validated successfully: \(basePath)", level: .info)
+        return .environment(path: basePath)
+
+    } catch let e as JavaSelectionError {
+        throw e
     } catch {
-        throw JavaSelectionError.invalidJavaHome(reason: "Error while running \(javaExec) : \(error)")
+        DebugLogger.log("Error while validating JAVA_HOME: \(error)", level: .error)
+        throw JavaSelectionError.invalidJavaHome
     }
 }
 
-// MARK: - Select JavaHome
-func selectJavaHome(minVersion: JavaVersion = JavaVersion(from: "\(hmclExpectedJavaMajorVersion)")!)
-    throws -> JavaHomeSource
-{
-    // Environment variables check
-    if let path = env["HMCL_JAVA_HOME"],
-        !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    {
+// MARK: - Java Selection
+func selectJavaHome(
+    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.hmclExpectedJavaMajorVersion)")!
+) throws -> JavaHomeSource {
+
+    DebugLogger.log("Selecting JavaHome with minimum version \(minVersion)", level: .info)
+
+    if let path = LauncherEnv.env["HMCL_JAVA_HOME"], !path.trimmingCharacters(in: .whitespaces).isEmpty {
+        DebugLogger.log("HMCL_JAVA_HOME environment variable found: \(path)", level: .debug)
         return try validateJavaAtPath(path, minVersion: minVersion)
     }
 
-    // Automatic
     let all = findAllJavaInstallations()
-    guard !all.isEmpty else { throw JavaSelectionError.noJavaInstalled }
+    DebugLogger.log("Found \(all.count) Java installations", level: .info)
+    guard !all.isEmpty else {
+        DebugLogger.log("No Java installations available", level: .warn)
+        throw JavaSelectionError.noJavaInstalled
+    }
 
-    let latest = all.sortedByVersionDescending().first!
-    guard latest.version >= minVersion else {
-        throw JavaSelectionError.newestTooLow(found: latest, required: minVersion)
+    guard let newest = all.sortedByVersionDescending().first,
+        newest.version >= minVersion
+    else {
+        DebugLogger.log(
+            "Newest Java version (\(all.first?.versionStr ?? "unknown")) < required \(minVersion)",
+            level: .warn
+        )
+        throw JavaSelectionError.newestTooLow(found: all.first!, required: minVersion)
     }
 
     let arch = currentArch()
     let darwin = getDarwinMajorVersion()
-    let allowX86Fallback = (arch == "arm64") && (darwin < 26)
+    let allowX86 = arch == "arm64" && darwin < 26
 
     let candidates = all.filtered(byMinVersion: minVersion)
-    let native = candidates.filtered(byArch: arch).sortedByVersionDescending()
-    if let best = native.first { return .autoDetected(path: best.path) }
+    DebugLogger.log("Filtered \(candidates.count) candidates >= min version", level: .debug)
 
-    if allowX86Fallback {
-        let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending()
-        if let fallback = x86.first { return .autoDetected(path: fallback.path) }
+    if let native = candidates.filtered(byArch: arch).sortedByVersionDescending().first {
+        DebugLogger.log(
+            "Selected native Java (\(native.versionStr)) for arch \(arch)", level: .info)
+        return .autoDetected(path: native.path)
     }
 
-    if arch == "arm64" && !allowX86Fallback {
+    if allowX86,
+        let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending().first
+    {
+        DebugLogger.log(
+            "Falling back to x86_64 Java (\(x86.versionStr)) on arm64 macOS <26", level: .info)
+        return .autoDetected(path: x86.path)
+    }
+
+    if arch == "arm64" && !allowX86 {
+        let arm64List = candidates.filtered(byArch: "arm64")
+        DebugLogger.log(
+            "No arm64 Java available on macOS \(darwin), candidates: \(arm64List.map { $0.versionStr })",
+            level: .warn)
         throw JavaSelectionError.noArm64OnNewMacOS(
-            darwin: darwin, minVer: minVersion, arm64List: candidates.filtered(byArch: "arm64"))
+            darwin: darwin,
+            minVer: minVersion,
+            arm64List: arm64List
+        )
     }
 
-    throw JavaSelectionError.noCompatibleJava(arch: arch, minVer: minVersion, all: all)
+    DebugLogger.log(
+        "No compatible Java found for arch \(arch) with min version \(minVersion)", level: .warn)
+    throw JavaSelectionError.noCompatibleJava(
+        arch: arch,
+        minVer: minVersion,
+        all: all
+    )
 }

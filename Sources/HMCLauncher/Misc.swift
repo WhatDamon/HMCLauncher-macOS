@@ -2,12 +2,12 @@ import Foundation
 
 // MARK: - Function: Open Java Download Page
 func downloadJava() {
-    let url: String =
+    let url =
         currentArch() == "arm64"
-        ? urlJavaDownloadLinkArm64
-        : urlJavaDownloadLinkX86_64
+        ? LauncherEnv.urlJavaDownloadLinkArm64
+        : LauncherEnv.urlJavaDownloadLinkX86_64
 
-    let process: Process = Process()
+    let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
     process.arguments = [url]
 

@@ -1,28 +1,69 @@
 import Foundation
 
-// MARK: - Utility: Debug Logger
+// MARK: - Debug Logger
+
 struct DebugLogger {
-    static let logURL: URL? = nil  // need to be considered
 
-    static func log(_ message: String) {
-        guard isDebug, let logURL: URL else { return }
+    // MARK: Configuration
+    static var isEnabled: Bool { LauncherEnv.isDebug }
+    static let logURL: URL? = nil  // set externally if needed
 
-        let formatter: DateFormatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let time: String = formatter.string(from: Date())
+    // MARK: Log Level
+    enum Level: String {
+        case debug = "DEBUG"
+        case info = "INFO"
+        case warn = "WARN"
+        case error = "ERROR"
+    }
 
-        let line: String = "[\(time)] [HMCLauncher-macOS] \(message)\n"
+    // MARK: Private State
+    private static let queue = DispatchQueue(
+        label: "hmclauncher.debug.logger",
+        qos: .utility
+    )
 
-        guard let data: Data = line.data(using: .utf8) else { return }
+    private static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        return f
+    }()
 
-        if FileManager.default.fileExists(atPath: logURL.path) {
-            if let handle: FileHandle = try? FileHandle(forWritingTo: logURL) {
-                handle.seekToEndOfFile()
-                handle.write(data)
-                try? handle.close()
+    // MARK: Logging API
+    static func log(
+        _ message: String,
+        level: Level = .debug,
+        file: String = #fileID,
+        line: Int = #line
+    ) {
+        guard isEnabled else { return }
+
+        queue.async {
+            let time = formatter.string(from: Date())
+            let filename = file.split(separator: "/").last ?? ""
+
+            let lineText =
+                "[\(time)][\(level.rawValue)][HMCLauncher-macOS][\(filename):\(line)] \(message)"
+
+            print(lineText)
+
+            if let url = logURL, let data = (lineText + "\n").data(using: .utf8) {
+                append(data, to: url)
             }
+        }
+    }
+
+    // MARK: File Writing
+    private static func append(_ data: Data, to url: URL) {
+        let fm = FileManager.default
+
+        if fm.fileExists(atPath: url.path),
+            let handle = try? FileHandle(forWritingTo: url)
+        {
+            defer { try? handle.close() }
+            handle.seekToEndOfFile()
+            handle.write(data)
         } else {
-            try? data.write(to: logURL)
+            try? data.write(to: url, options: .atomic)
         }
     }
 }

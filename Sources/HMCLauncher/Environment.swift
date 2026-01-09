@@ -1,14 +1,27 @@
 import Foundation
 
-// MARK: - Global Environment and Arguments
-let env: [String: String] = ProcessInfo.processInfo.environment
-let args: [String] = CommandLine.arguments
-let isDebug: Bool = args.contains("--debug")
-let launcherVer: String = "3.8.0"
+// MARK: - Environment & Arguments
+struct LauncherEnv {
+    // Environment
+    static let env = ProcessInfo.processInfo.environment
+    static let args = CommandLine.arguments
 
-// MARK: - HMCL Expection
-let hmclExpectedJavaMajorVersion: Int = 17
-let launcherPath: String = "../Resources/HMCL.jar"
-let urlHMCLGithubPage: String = "https://github.com/HMCL-dev/HMCL"
-let urlJavaDownloadLinkArm64: String = "https://docs.hmcl.net/downloads/macos/arm64.html"
-let urlJavaDownloadLinkX86_64: String = "https://docs.hmcl.net/downloads/macos/x86_64.html"
+    // Debug mode
+    static let isDebug: Bool = {
+        #if DEBUG
+            return true
+        #else
+            return args.contains("--debug")
+        #endif
+    }()
+
+    // Launcher info
+    static let launcherVer = "3.8.0"
+    static let hmclExpectedJavaMajorVersion = 17
+    static let launcherPath = "../Resources/HMCL.jar"
+
+    // URLs
+    static let urlHMCLGithubPage = "https://github.com/HMCL-dev/HMCL"
+    static let urlJavaDownloadLinkArm64 = "https://docs.hmcl.net/downloads/macos/arm64.html"
+    static let urlJavaDownloadLinkX86_64 = "https://docs.hmcl.net/downloads/macos/x86_64.html"
+}

@@ -1,14 +1,8 @@
 import Foundation
 
-// MARK: - Internal Utilities
-private extension Array {
-    subscript(safe index: Index) -> Element? {
-        indices.contains(index) ? self[index] : nil
-    }
-}
+// MARK: - JavaVersion
 
-// MARK: - Internal JavaVersion Implementation
-fileprivate struct _JavaVersion: Comparable, CustomStringConvertible {
+struct JavaVersion: Comparable, CustomStringConvertible {
     let major: Int
     let minor: Int
     let security: Int
@@ -19,37 +13,39 @@ fileprivate struct _JavaVersion: Comparable, CustomStringConvertible {
         self.security = security
     }
 
-    init?(string: String) {
-        let normalized = string
+    init?(from string: String) {
+        let parts =
+            string
             .replacingOccurrences(of: "_", with: ".")
             .replacingOccurrences(of: "-", with: ".")
-
-        let components = normalized
             .split(separator: ".")
             .compactMap { Int($0) }
 
-        guard !components.isEmpty else { return nil }
+        guard !parts.isEmpty else {
+            DebugLogger.log(
+                "Failed to parse JavaVersion from empty string: '\(string)'", level: .warn)
+            return nil
+        }
 
-        if components.first == 1, components.count >= 2 {
-            // Java 8 and earlier: 1.x.y_z
+        if parts.first == 1, parts.count >= 2 {
             self.init(
-                major: components[safe: 1] ?? 0,
-                minor: components[safe: 2] ?? 0,
-                security: components[safe: 3] ?? 0
+                major: parts[safe: 1] ?? 0,
+                minor: parts[safe: 2] ?? 0,
+                security: parts[safe: 3] ?? 0
             )
         } else {
-            // Java 9+
             self.init(
-                major: components[safe: 0] ?? 0,
-                minor: components[safe: 1] ?? 0,
-                security: components[safe: 2] ?? 0
+                major: parts[safe: 0] ?? 0,
+                minor: parts[safe: 1] ?? 0,
+                security: parts[safe: 2] ?? 0
             )
         }
+
+        DebugLogger.log("Parsed JavaVersion '\(self)' from string '\(string)'", level: .debug)
     }
 
-    static func < (lhs: _JavaVersion, rhs: _JavaVersion) -> Bool {
-        (lhs.major, lhs.minor, lhs.security)
-            < (rhs.major, rhs.minor, rhs.security)
+    static func < (l: Self, r: Self) -> Bool {
+        (l.major, l.minor, l.security) < (r.major, r.minor, r.security)
     }
 
     var description: String {
@@ -59,127 +55,114 @@ fileprivate struct _JavaVersion: Comparable, CustomStringConvertible {
     }
 }
 
-// MARK: - Public JavaVersion (Compatibility Wrapper)
-struct JavaVersion: Comparable, Equatable, CustomStringConvertible {
-    let major: Int
-    let minor: Int
-    let security: Int
+// MARK: - JavaInstallation
 
-    private let impl: _JavaVersion
-
-    init(major: Int, minor: Int = 0, security: Int = 0) {
-        let impl = _JavaVersion(
-            major: major,
-            minor: minor,
-            security: security
-        )
-        self.impl = impl
-        self.major = impl.major
-        self.minor = impl.minor
-        self.security = impl.security
-    }
-
-    init?(from versionString: String) {
-        guard let impl = _JavaVersion(string: versionString) else {
-            return nil
-        }
-        self.impl = impl
-        self.major = impl.major
-        self.minor = impl.minor
-        self.security = impl.security
-    }
-
-    static func < (lhs: JavaVersion, rhs: JavaVersion) -> Bool {
-        lhs.impl < rhs.impl
-    }
-
-    var description: String {
-        impl.description
-    }
-}
-
-// MARK: - Public JavaInstallation
 struct JavaInstallation {
-    let versionStr: String
+    let versionStr, arch, vendor, displayName, path: String
     let version: JavaVersion
-    let arch: String
-    let vendor: String
-    let displayName: String
-    let path: String
 
     var isArm64: Bool { arch == "arm64" }
 
-    fileprivate init?(from dict: [String: Any]) {
+    fileprivate init?(dict: [String: Any]) {
         guard
+            (dict["JVMEnabled"] as? Bool) != false,
             let versionStr = dict["JVMVersion"] as? String,
-            let implVersion = _JavaVersion(string: versionStr),
+            let version = JavaVersion(from: versionStr),
             let arch = dict["JVMArch"] as? String,
             let vendor = dict["JVMVendor"] as? String,
             let displayName = dict["JVMName"] as? String,
-            let path = dict["JVMHomePath"] as? String,
-            (dict["JVMEnabled"] as? Bool) != false
-        else { return nil }
+            let path = dict["JVMHomePath"] as? String
+        else {
+            DebugLogger.log("Skipping invalid JVM entry: \(dict)", level: .debug)
+            return nil
+        }
 
         self.versionStr = versionStr
-        self.version = JavaVersion(
-            major: implVersion.major,
-            minor: implVersion.minor,
-            security: implVersion.security
-        )
+        self.version = version
         self.arch = arch
         self.vendor = vendor
         self.displayName = displayName
         self.path = path
+
+        DebugLogger.log(
+            "Discovered JavaInstallation: \(versionStr) (\(arch)) @ \(path)", level: .info)
     }
 }
 
-// MARK: - java_home Integration
-private func execJavaHomeXData() -> Data? {
-    let task = Process()
-    let pipe = Pipe()
+// MARK: - java_home
 
-    task.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
-    task.arguments = ["-X"]
-    task.standardOutput = pipe
+private func javaHomeXData() -> Data? {
+    let p = Process()
+    p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
+    p.arguments = ["-X"]
+
+    let pipe = Pipe()
+    p.standardOutput = pipe
 
     do {
-        try task.run()
-        task.waitUntilExit()
-        guard task.terminationStatus == 0 else { return nil }
-        return pipe.fileHandleForReading.readDataToEndOfFile()
+        DebugLogger.log("Running /usr/libexec/java_home -X", level: .debug)
+        try p.run()
+        p.waitUntilExit()
+        guard p.terminationStatus == 0 else {
+            DebugLogger.log(
+                "/usr/libexec/java_home terminated with \(p.terminationStatus)", level: .warn)
+            return nil
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        DebugLogger.log("/usr/libexec/java_home returned \(data.count) bytes", level: .debug)
+        return data
     } catch {
+        DebugLogger.log("Failed to run /usr/libexec/java_home: \(error)", level: .error)
         return nil
     }
 }
 
 // MARK: - Public API
+
 func findAllJavaInstallations() -> [JavaInstallation] {
     guard
-        let data = execJavaHomeXData(),
-        let array = try? PropertyListSerialization.propertyList(
+        let data = javaHomeXData(),
+        let list = try? PropertyListSerialization.propertyList(
             from: data,
             options: [],
             format: nil
         ) as? [[String: Any]]
     else {
+        DebugLogger.log("No Java installations found", level: .warn)
         return []
     }
 
-    return array.compactMap(JavaInstallation.init(from:))
+    let installations = list.compactMap(JavaInstallation.init(dict:))
+    DebugLogger.log("Total Java installations found: \(installations.count)", level: .info)
+    return installations
 }
 
-// MARK: - Collection Extensions
+// MARK: - Helpers
+
 extension Array where Element == JavaInstallation {
-
-    func sortedByVersionDescending() -> [JavaInstallation] {
-        sorted { $0.version > $1.version }
+    func sortedByVersionDescending() -> [Element] {
+        let sorted = sorted { $0.version > $1.version }
+        DebugLogger.log("Sorted Java installations descending by version", level: .debug)
+        return sorted
     }
 
-    func filtered(byMinVersion min: JavaVersion) -> [JavaInstallation] {
-        filter { $0.version >= min }
+    func filtered(byMinVersion v: JavaVersion) -> [Element] {
+        let filtered = filter { $0.version >= v }
+        DebugLogger.log(
+            "Filtered Java installations >= \(v): \(filtered.count) remaining", level: .debug)
+        return filtered
     }
 
-    func filtered(byArch arch: String) -> [JavaInstallation] {
-        filter { $0.arch == arch }
+    func filtered(byArch a: String) -> [Element] {
+        let filtered = filter { $0.arch == a }
+        DebugLogger.log(
+            "Filtered Java installations by arch '\(a)': \(filtered.count) remaining", level: .debug
+        )
+        return filtered
     }
+}
+
+extension Array {
+    fileprivate subscript(safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
 }
