@@ -1,7 +1,6 @@
 import Foundation
 
 // MARK: - JavaVersion
-
 struct JavaVersion: Comparable, CustomStringConvertible {
     let major: Int
     let minor: Int
@@ -56,12 +55,11 @@ struct JavaVersion: Comparable, CustomStringConvertible {
 }
 
 // MARK: - JavaInstallation
-
 struct JavaInstallation {
     let versionStr, arch, vendor, displayName, path: String
     let version: JavaVersion
 
-    var isArm64: Bool { arch == "arm64" }
+    var isArm64: Bool { arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" }
 
     fileprivate init?(dict: [String: Any]) {
         guard
@@ -90,7 +88,6 @@ struct JavaInstallation {
 }
 
 // MARK: - java_home
-
 private func javaHomeXData() -> Data? {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
@@ -119,7 +116,6 @@ private func javaHomeXData() -> Data? {
 }
 
 // MARK: - Public API
-
 func findAllJavaInstallations() -> [JavaInstallation] {
     guard
         let data = javaHomeXData(),
@@ -139,7 +135,6 @@ func findAllJavaInstallations() -> [JavaInstallation] {
 }
 
 // MARK: - Helpers
-
 extension Array where Element == JavaInstallation {
     func sortedByVersionDescending() -> [Element] {
         let sorted = sorted { $0.version > $1.version }
@@ -155,7 +150,9 @@ extension Array where Element == JavaInstallation {
     }
 
     func filtered(byArch a: String) -> [Element] {
-        let filtered = filter { $0.arch == a }
+        let filtered = filter {
+            $0.arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == a.lowercased()
+        }
         DebugLogger.log(
             "Filtered Java installations by arch '\(a)': \(filtered.count) remaining", level: .debug
         )
