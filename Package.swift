@@ -26,6 +26,11 @@ let package = Package(
                         "-flto"
                     ], .when(configuration: .release))
             ]
+        ),
+        .testTarget(
+            name: "HMCLauncherTests",
+            dependencies: ["HMCLauncher"],
+            path: "Tests"
         )
     ]
 )

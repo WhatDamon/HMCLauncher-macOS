@@ -63,7 +63,7 @@ struct JavaInstallation {
         arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64"
     }
 
-    fileprivate init?(dict: [String: Any]) {
+    init?(dict: [String: Any]) {
         guard
             (dict["JVMEnabled"] as? Bool) != false,
             let versionStr = dict["JVMVersion"] as? String,
@@ -164,4 +164,24 @@ extension Array where Element == JavaInstallation {
 
 extension Array {
     fileprivate subscript(safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
+}
+
+extension JavaInstallation {
+    #if DEBUG
+    init(
+        versionStr: String,
+        version: JavaVersion,
+        arch: String,
+        vendor: String,
+        displayName: String,
+        path: String
+    ) {
+        self.versionStr = versionStr
+        self.version = version
+        self.arch = arch
+        self.vendor = vendor
+        self.displayName = displayName
+        self.path = path
+    }
+    #endif
 }
