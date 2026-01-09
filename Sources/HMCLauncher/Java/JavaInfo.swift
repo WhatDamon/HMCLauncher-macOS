@@ -1,31 +1,104 @@
 import Foundation
 
-// MARK: - JavaVersion：Version Parser and compare
-struct JavaVersion: Comparable, CustomStringConvertible {
-    let major, minor, security: Int
-    init?(from v: String) {
-        let comps = v.replacingOccurrences(of: "_", with: ".")
-            .split(separator: ".").compactMap { Int($0) }
-        if comps.first == 1 && comps.count >= 2 {
-            (major, minor, security) = (
-                comps[1], comps.count > 2 ? comps[2] : 0, comps.count > 3 ? comps[3] : 0
+// MARK: - Internal Utilities
+private extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
+// MARK: - Internal JavaVersion Implementation
+fileprivate struct _JavaVersion: Comparable, CustomStringConvertible {
+    let major: Int
+    let minor: Int
+    let security: Int
+
+    init(major: Int, minor: Int = 0, security: Int = 0) {
+        self.major = major
+        self.minor = minor
+        self.security = security
+    }
+
+    init?(string: String) {
+        let normalized = string
+            .replacingOccurrences(of: "_", with: ".")
+            .replacingOccurrences(of: "-", with: ".")
+
+        let components = normalized
+            .split(separator: ".")
+            .compactMap { Int($0) }
+
+        guard !components.isEmpty else { return nil }
+
+        if components.first == 1, components.count >= 2 {
+            // Java 8 and earlier: 1.x.y_z
+            self.init(
+                major: components[safe: 1] ?? 0,
+                minor: components[safe: 2] ?? 0,
+                security: components[safe: 3] ?? 0
             )
         } else {
-            (major, minor, security) = (
-                comps.first ?? 0, comps.count > 1 ? comps[1] : 0, comps.count > 2 ? comps[2] : 0
+            // Java 9+
+            self.init(
+                major: components[safe: 0] ?? 0,
+                minor: components[safe: 1] ?? 0,
+                security: components[safe: 2] ?? 0
             )
         }
     }
-    static func < (l: JavaVersion, r: JavaVersion) -> Bool {
-        (l.major, l.minor, l.security) < (r.major, r.minor, r.security)
+
+    static func < (lhs: _JavaVersion, rhs: _JavaVersion) -> Bool {
+        (lhs.major, lhs.minor, lhs.security)
+            < (rhs.major, rhs.minor, rhs.security)
     }
-    static func == (l: JavaVersion, r: JavaVersion) -> Bool {
-        (l.major, l.minor, l.security) == (r.major, r.minor, r.security)
+
+    var description: String {
+        major < 9
+            ? "1.\(major).\(minor)_\(security)"
+            : "\(major).\(minor).\(security)"
     }
-    var description: String { "\(major).\(minor).\(security)" }
 }
 
-// MARK: - JavaInstallation：Single Java Info
+// MARK: - Public JavaVersion (Compatibility Wrapper)
+struct JavaVersion: Comparable, Equatable, CustomStringConvertible {
+    let major: Int
+    let minor: Int
+    let security: Int
+
+    private let impl: _JavaVersion
+
+    init(major: Int, minor: Int = 0, security: Int = 0) {
+        let impl = _JavaVersion(
+            major: major,
+            minor: minor,
+            security: security
+        )
+        self.impl = impl
+        self.major = impl.major
+        self.minor = impl.minor
+        self.security = impl.security
+    }
+
+    init?(from versionString: String) {
+        guard let impl = _JavaVersion(string: versionString) else {
+            return nil
+        }
+        self.impl = impl
+        self.major = impl.major
+        self.minor = impl.minor
+        self.security = impl.security
+    }
+
+    static func < (lhs: JavaVersion, rhs: JavaVersion) -> Bool {
+        lhs.impl < rhs.impl
+    }
+
+    var description: String {
+        impl.description
+    }
+}
+
+// MARK: - Public JavaInstallation
 struct JavaInstallation {
     let versionStr: String
     let version: JavaVersion
@@ -34,71 +107,79 @@ struct JavaInstallation {
     let displayName: String
     let path: String
 
-    init?(version: String, arch: String, vendor: String, displayName: String, path: String) {
-        guard let parsedVersion = JavaVersion(from: version) else {
-            return nil
-        }
+    var isArm64: Bool { arch == "arm64" }
 
-        self.versionStr = version
-        self.version = parsedVersion
+    fileprivate init?(from dict: [String: Any]) {
+        guard
+            let versionStr = dict["JVMVersion"] as? String,
+            let implVersion = _JavaVersion(string: versionStr),
+            let arch = dict["JVMArch"] as? String,
+            let vendor = dict["JVMVendor"] as? String,
+            let displayName = dict["JVMName"] as? String,
+            let path = dict["JVMHomePath"] as? String,
+            (dict["JVMEnabled"] as? Bool) != false
+        else { return nil }
+
+        self.versionStr = versionStr
+        self.version = JavaVersion(
+            major: implVersion.major,
+            minor: implVersion.minor,
+            security: implVersion.security
+        )
         self.arch = arch
         self.vendor = vendor
         self.displayName = displayName
         self.path = path
     }
-    var isArm64: Bool { arch == "arm64" }
 }
 
-// MARK: - Utility: Parser /usr/libexec/java_home -V
-func execJavaHomeV() -> String {
-    let process = Process()
+// MARK: - java_home Integration
+private func execJavaHomeXData() -> Data? {
+    let task = Process()
     let pipe = Pipe()
 
-    process.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
-    process.arguments = ["-V"]
-    process.standardError = pipe
+    task.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
+    task.arguments = ["-X"]
+    task.standardOutput = pipe
 
     do {
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            return ""
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(decoding: data, as: UTF8.self)
+        try task.run()
+        task.waitUntilExit()
+        guard task.terminationStatus == 0 else { return nil }
+        return pipe.fileHandleForReading.readDataToEndOfFile()
     } catch {
-        return ""
+        return nil
     }
 }
 
-func parseJavaInstallations(from output: String) -> [JavaInstallation] {
-    let regex = try! NSRegularExpression(
-        pattern: #"^(\S+)\s+\(([^)]+)\)\s+"([^"]+)"\s+-\s+"([^"]+)"\s+(.+)$"#)
-    return output.split(separator: "\n").compactMap { line in
-        let s = String(line).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !s.isEmpty, !s.contains("Matching Java Virtual Machines") else { return nil }
-        let range = NSRange(s.startIndex..., in: s)
-        guard let m = regex.firstMatch(in: s, range: range) else { return nil }
-        let ver = String(s[Range(m.range(at: 1), in: s)!])
-        let arch = String(s[Range(m.range(at: 2), in: s)!])
-        let vendor = String(s[Range(m.range(at: 3), in: s)!])
-        let disp = String(s[Range(m.range(at: 4), in: s)!])
-        let path = String(s[Range(m.range(at: 5), in: s)!])
-        return JavaInstallation(
-            version: ver, arch: arch, vendor: vendor, displayName: disp, path: path)
-    }
-}
-
+// MARK: - Public API
 func findAllJavaInstallations() -> [JavaInstallation] {
-    parseJavaInstallations(from: execJavaHomeV())
+    guard
+        let data = execJavaHomeXData(),
+        let array = try? PropertyListSerialization.propertyList(
+            from: data,
+            options: [],
+            format: nil
+        ) as? [[String: Any]]
+    else {
+        return []
+    }
+
+    return array.compactMap(JavaInstallation.init(from:))
 }
 
+// MARK: - Collection Extensions
 extension Array where Element == JavaInstallation {
-    func sortedByVersionDescending() -> [JavaInstallation] { sorted { $0.version > $1.version } }
+
+    func sortedByVersionDescending() -> [JavaInstallation] {
+        sorted { $0.version > $1.version }
+    }
+
     func filtered(byMinVersion min: JavaVersion) -> [JavaInstallation] {
         filter { $0.version >= min }
     }
-    func filtered(byArch arch: String) -> [JavaInstallation] { filter { $0.arch == arch } }
+
+    func filtered(byArch arch: String) -> [JavaInstallation] {
+        filter { $0.arch == arch }
+    }
 }
