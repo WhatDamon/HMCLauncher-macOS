@@ -98,10 +98,14 @@ final class JavaInfoTests: XCTestCase {
                 "JVMEnabled": true, "JVMVersion": "18.0.2", "JVMArch": "x86_64",
                 "JVMVendor": "Oracle", "JVMName": "Oracle JDK 18", "JVMHomePath": "/path3",
             ]),
+            makeJava(dict: [
+                "JVMEnabled": true, "JVMVersion": "1.8.0_462", "JVMArch": "x86_64",
+                "JVMVendor": "Eclipse Temurin", "JVMName": "Eclipse Temurin 8", "JVMHomePath": "/path4",
+            ]),
         ]
 
         let sorted = javaList.sortedByVersionDescending()
-        XCTAssertEqual(sorted.map { $0.version.major }, [21, 18, 17])
+        XCTAssertEqual(sorted.map { $0.version.major }, [21, 18, 17, 8])
 
         let filteredMin18 = javaList.filtered(byMinVersion: JavaVersion(major: 18))
         XCTAssertEqual(filteredMin18.map { $0.version.major }, [21, 18])
