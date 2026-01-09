@@ -17,6 +17,30 @@ enum JavaSelectionError: Error {
     case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion, arm64List: [JavaInstallation])
 }
 
+extension JavaSelectionError: CustomStringConvertible {
+    var description: String {
+        switch self {
+        case .invalidJavaHome:
+            return "Invalid JAVA_HOME."
+
+        case .userSpecifiedJavaVersionTooLow(_, let detectedVersion, let required):
+            return "Java \(detectedVersion) is lower than required \(required)."
+
+        case .noJavaInstalled:
+            return "No Java installation found."
+
+        case .newestTooLow(let found, let required):
+            return "Newest Java \(found.version) is lower than required \(required)."
+
+        case .noCompatibleJava(let arch, let minVer, _):
+            return "No Java \(minVer)+ found for \(arch)."
+
+        case .noArm64OnNewMacOS(let darwin, let minVer, _):
+            return "Require ARM64 Java \(minVer)+ on Darwin \(darwin)."
+        }
+    }
+}
+
 // MARK: - Function: Version Extraction
 private func extractJavaVersion(from output: String) -> String? {
     let version =

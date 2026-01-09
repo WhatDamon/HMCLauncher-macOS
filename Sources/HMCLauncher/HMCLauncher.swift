@@ -78,7 +78,7 @@ struct HMCLauncher {
         } catch let error as JavaSelectionError {
             DebugLogger.log("Java selection error: \(error)", level: .error)
             showDialog(
-                L.t("ERROR_OCCURRED"),
+                L.t("ERROR_OCCURRED", error.description),
                 isWarning: true
             )
             exit(1)
