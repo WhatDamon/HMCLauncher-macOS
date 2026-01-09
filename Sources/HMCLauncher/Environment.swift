@@ -24,4 +24,5 @@ struct LauncherEnv {
     static let urlHMCLGithubPage = "https://github.com/HMCL-dev/HMCL"
     static let urlJavaDownloadLinkArm64 = "https://docs.hmcl.net/downloads/macos/arm64.html"
     static let urlJavaDownloadLinkX86_64 = "https://docs.hmcl.net/downloads/macos/x86_64.html"
+    static let logURL: URL? = nil;
 }

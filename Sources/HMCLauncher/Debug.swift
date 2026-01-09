@@ -10,7 +10,7 @@ struct DebugLogger {
     }
 
     static var isEnabled: Bool { LauncherEnv.isDebug }
-    static let logURL: URL? = nil
+    static let logURL: URL? = LauncherEnv.logURL
 
     private static let formatter: DateFormatter = {
         let f = DateFormatter()
