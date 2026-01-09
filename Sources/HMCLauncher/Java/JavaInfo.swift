@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - JavaVersion
+// MARK: - Struct: JavaVersion
 struct JavaVersion: Comparable, CustomStringConvertible {
     let major: Int
     let minor: Int
@@ -54,12 +54,14 @@ struct JavaVersion: Comparable, CustomStringConvertible {
     }
 }
 
-// MARK: - JavaInstallation
+// MARK: - Struct: JavaInstallation
 struct JavaInstallation {
     let versionStr, arch, vendor, displayName, path: String
     let version: JavaVersion
 
-    var isArm64: Bool { arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" }
+    var isArm64: Bool {
+        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64"
+    }
 
     fileprivate init?(dict: [String: Any]) {
         guard
@@ -87,7 +89,7 @@ struct JavaInstallation {
     }
 }
 
-// MARK: - java_home
+// MARK: - Function: Get Java Home Data
 private func javaHomeXData() -> Data? {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
@@ -115,7 +117,7 @@ private func javaHomeXData() -> Data? {
     }
 }
 
-// MARK: - Public API
+// MARK: - Function: Public API
 func findAllJavaInstallations() -> [JavaInstallation] {
     guard
         let data = javaHomeXData(),

@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - Debug Logger
+// MARK: - Function: Debug Logger
 struct DebugLogger {
     enum Level: String {
         case debug = "DEBUG"

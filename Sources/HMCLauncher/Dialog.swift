@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - Utility: Show Error Dialog
+// MARK: - Function: Show Error Dialog
 func showDialog(
     _ message: String,
     title: String = L.t("ERROR_TITLE"),

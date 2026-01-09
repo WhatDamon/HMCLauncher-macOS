@@ -1,12 +1,12 @@
 import Foundation
 
-// MARK: - JavaHome Source
+// MARK: - Enums: JavaHome Source
 enum JavaHomeSource {
     case environment(path: String)
     case autoDetected(path: String)
 }
 
-// MARK: - Errors
+// MARK: - Enum: Errors
 enum JavaSelectionError: Error {
     case invalidJavaHome
     case userSpecifiedJavaVersionTooLow(
@@ -17,7 +17,7 @@ enum JavaSelectionError: Error {
     case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion, arm64List: [JavaInstallation])
 }
 
-// MARK: - Version Extraction
+// MARK: - Function: Version Extraction
 private func extractJavaVersion(from output: String) -> String? {
     let version =
         output
@@ -37,7 +37,7 @@ private func extractJavaVersion(from output: String) -> String? {
     return version
 }
 
-// MARK: - JAVA_HOME Validation
+// MARK: - Function: JAVA_HOME Validation
 private func findJavaExecutable(in base: String) -> String? {
     let fm = FileManager.default
     let candidates = [
@@ -57,6 +57,7 @@ private func findJavaExecutable(in base: String) -> String? {
     return executable
 }
 
+// MARK: - Function: Validate Java at Path
 func validateJavaAtPath(
     _ basePath: String,
     minVersion: JavaVersion
@@ -119,14 +120,16 @@ func validateJavaAtPath(
     }
 }
 
-// MARK: - Java Selection
+// MARK: - Function: Java Selection
 func selectJavaHome(
     minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.hmclExpectedJavaMajorVersion)")!
 ) throws -> JavaHomeSource {
 
     DebugLogger.log("Selecting JavaHome with minimum version \(minVersion)", level: .info)
 
-    if let path = LauncherEnv.env["HMCL_JAVA_HOME"], !path.trimmingCharacters(in: .whitespaces).isEmpty {
+    if let path = LauncherEnv.env["HMCL_JAVA_HOME"],
+        !path.trimmingCharacters(in: .whitespaces).isEmpty
+    {
         DebugLogger.log("HMCL_JAVA_HOME environment variable found: \(path)", level: .debug)
         return try validateJavaAtPath(path, minVersion: minVersion)
     }
@@ -150,7 +153,8 @@ func selectJavaHome(
 
     let arch = currentArch()
     let darwin = getDarwinMajorVersion()
-    let allowX86 = arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" && darwin < 26
+    let allowX86 =
+        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" && darwin < 26
 
     let candidates = all.filtered(byMinVersion: minVersion)
     DebugLogger.log("Filtered \(candidates.count) candidates >= min version", level: .debug)
