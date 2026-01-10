@@ -4,7 +4,7 @@ import Foundation
 @main
 struct HMCLauncher {
     static func main() {
-        DebugLogger.log("HMCLauncher-macOS \(LauncherEnv.launcherVer) Start", level: .info)
+        DebugLogger.log("HMCLauncher-macOS \(LauncherEnv.LAUNCHER_VER) Start", level: .info)
 
         do {
             DebugLogger.log("Attempting to select JAVA_HOME...", level: .debug)
@@ -31,13 +31,13 @@ struct HMCLauncher {
             exit(1)
         } catch JavaSelectionError.newestTooLow(let installation, _) {
             DebugLogger.log(
-                "Newest installed Java (\(installation.versionStr)) is lower than required (\(LauncherEnv.hmclExpectedJavaMajorVersion))",
+                "Newest installed Java (\(installation.versionStr)) is lower than required (\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION))",
                 level: .warn
             )
             showDialog(
                 L.t(
                     "JAVA_TOO_OLD",
-                    "\(LauncherEnv.hmclExpectedJavaMajorVersion)",
+                    "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)",
                     installation.versionStr
                 ),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
@@ -54,13 +54,13 @@ struct HMCLauncher {
             exit(1)
         } catch JavaSelectionError.userSpecifiedJavaVersionTooLow(_, let detected, _) {
             DebugLogger.log(
-                "User-specified JAVA_HOME version \(detected) is lower than required (\(LauncherEnv.hmclExpectedJavaMajorVersion))",
+                "User-specified JAVA_HOME version \(detected) is lower than required (\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION))",
                 level: .warn
             )
             showDialog(
                 L.t(
                     "JAVA_TOO_OLD",
-                    "\(LauncherEnv.hmclExpectedJavaMajorVersion)",
+                    "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)",
                     detected
                 ),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),

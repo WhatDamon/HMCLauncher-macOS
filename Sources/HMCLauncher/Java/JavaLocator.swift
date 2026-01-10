@@ -145,12 +145,12 @@ func validateJavaAtPath(
 // MARK: - Function: Java Selection
 @MainActor
 func selectJavaHome(
-    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.hmclExpectedJavaMajorVersion)")!
+    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)")!
 ) throws -> JavaHomeSource {
 
     DebugLogger.log("Selecting JavaHome with minimum version \(minVersion)", level: .info)
 
-    if let path = LauncherEnv.env["HMCL_JAVA_HOME"],
+    if let path = LauncherEnv.ENV["HMCL_JAVA_HOME"],
         !path.trimmingCharacters(in: .whitespaces).isEmpty
     {
         DebugLogger.log("HMCL_JAVA_HOME environment variable found: \(path)", level: .debug)
