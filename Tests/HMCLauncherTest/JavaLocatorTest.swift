@@ -4,7 +4,6 @@ import XCTest
 
 @MainActor
 final class JavaLocatorTests: XCTestCase {
-
     private var originalFindAll: () -> [JavaInstallation] = { [] }
     private var originalArch: () -> String = { "x86_64" }
     private var originalDarwin: () -> Int = { 23 }

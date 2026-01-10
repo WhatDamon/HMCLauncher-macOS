@@ -3,7 +3,6 @@ import XCTest
 @testable import HMCLauncher
 
 final class JavaInfoTests: XCTestCase {
-
     // Helper to create JavaInstallation safely
     private func makeJava(dict: [String: Any]) -> JavaInstallation {
         return try! XCTUnwrap(JavaInstallation(dict: dict))
