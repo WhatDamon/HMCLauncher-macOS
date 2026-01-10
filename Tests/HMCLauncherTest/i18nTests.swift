@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import HMCLauncher
 
 final class LocalizationTests: XCTestCase {
@@ -11,7 +12,8 @@ final class LocalizationTests: XCTestCase {
     private func placeholders(in string: String) -> [String] {
         do {
             let regex = try NSRegularExpression(pattern: placeholderPattern)
-            let matches = regex.matches(in: string, range: NSRange(string.startIndex..., in: string))
+            let matches = regex.matches(
+                in: string, range: NSRange(string.startIndex..., in: string))
             return matches.map { String(string[Range($0.range, in: string)!]) }
         } catch {
             XCTFail("Regex failed: \(error)")
@@ -28,8 +30,12 @@ final class LocalizationTests: XCTestCase {
             for key in englishStrings.keys {
                 let localized = table[key] ?? englishStrings[key]
 
-                XCTAssertNotNil(localized, "Missing localized string for key '\(key)' in language \(lang.rawValue)")
-                XCTAssertFalse(localized!.isEmpty, "Empty localized string for key '\(key)' in language \(lang.rawValue)")
+                XCTAssertNotNil(
+                    localized,
+                    "Missing localized string for key '\(key)' in language \(lang.rawValue)")
+                XCTAssertFalse(
+                    localized!.isEmpty,
+                    "Empty localized string for key '\(key)' in language \(lang.rawValue)")
 
                 let englishPlaceholders = placeholders(in: englishStrings[key]!)
                 let localizedPlaceholders = placeholders(in: localized!)
@@ -48,7 +54,7 @@ final class LocalizationTests: XCTestCase {
         let englishStrings = allStrings[.en] ?? [:]
 
         for (lang, table) in allStrings {
-            guard lang != .en else { continue } // Skip English itself
+            guard lang != .en else { continue }  // Skip English itself
 
             for (key, englishText) in englishStrings {
                 let localized = table[key] ?? englishText

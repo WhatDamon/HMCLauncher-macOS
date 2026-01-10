@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import HMCLauncher
 
 final class PathTests: XCTestCase {
@@ -17,7 +18,8 @@ final class PathTests: XCTestCase {
 
     func testExecutableURL() throws {
         let exeURL = AppPath.executableURL()
-        XCTAssertTrue(exeURL.path.hasSuffix(CommandLine.arguments[0].components(separatedBy: "/").last ?? ""))
+        XCTAssertTrue(
+            exeURL.path.hasSuffix(CommandLine.arguments[0].components(separatedBy: "/").last ?? ""))
     }
 
     func testAppBundleDetection() throws {
@@ -51,7 +53,8 @@ final class PathTests: XCTestCase {
         XCTAssertTrue(logFile.lastPathComponent.contains("HMCLauncher-macOS"))
 
         let regex = #"\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2} HMCLauncher-macOS\.log"#
-        XCTAssertTrue(logFile.lastPathComponent.range(of: regex, options: .regularExpression) != nil)
+        XCTAssertTrue(
+            logFile.lastPathComponent.range(of: regex, options: .regularExpression) != nil)
     }
 
     func testFindJavaExecutableReturnsNilForInvalidBase() throws {
@@ -60,12 +63,14 @@ final class PathTests: XCTestCase {
     }
 
     func testFindJavaExecutableReturnsPathForMock() throws {
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(
+            UUID().uuidString)
         let binDir = tempDir.appendingPathComponent("bin", isDirectory: true)
         try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
 
         let javaFile = binDir.appendingPathComponent("java")
-        FileManager.default.createFile(atPath: javaFile.path, contents: Data(), attributes: [.posixPermissions: 0o755])
+        FileManager.default.createFile(
+            atPath: javaFile.path, contents: Data(), attributes: [.posixPermissions: 0o755])
 
         let found = AppPath.findJavaExecutable(base: tempDir.path)
         XCTAssertEqual(found, javaFile.path)

@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import HMCLauncher
 
 final class SystemUtilTests: XCTestCase {
