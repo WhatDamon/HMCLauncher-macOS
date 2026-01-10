@@ -33,8 +33,8 @@ enum JavaSelectionError: Error, CustomStringConvertible {
             return "Newest Java \(found.version) is lower than required \(required)."
         case .noCompatibleJava(let arch, let minVer, _):
             return "No Java \(minVer)+ found for \(arch)."
-        case .noArm64OnNewMacOS(let darwin, let minVer, _):
-            return "Require ARM64 Java \(minVer)+ on Darwin \(darwin)."
+        case .noArm64OnNewMacOS(_, let minVer, _):
+            return "Require ARM64 Java \(minVer)+ on macOS \(LauncherEnv.MACOS_VER)."
         }
     }
 }

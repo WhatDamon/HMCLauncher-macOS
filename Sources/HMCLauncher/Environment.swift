@@ -6,6 +6,8 @@ struct LauncherEnv {
     static let ENV = ProcessInfo.processInfo.environment
     static let ARGS = CommandLine.arguments
     static let IS_INSIDE_APP_BUNDLE = AppPath.isRunningInsideAppBundle()
+    static let DARWIN_VER = getDarwinMajorVersion()
+    static let MACOS_VER = macOSVersionString(fromDarwin: DARWIN_VER)
 
     // Debug mode
     static let IS_DEBUG: Bool = {

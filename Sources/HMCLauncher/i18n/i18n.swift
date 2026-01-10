@@ -20,6 +20,7 @@ enum L {
             "WARNING_TITLE": "Warning",
             "CANCEL_BUTTON": "Cancel",
             "ERROR_OCCURRED": "An error has occurred:\n%@",
+            "UNSUPPORTED_MACOS": "Unsupported macOS!\nMinimum supported version is 10.15.",
             "HMCL_JAVA_HOME_INVALID":
                 "The Java path specified by HMCL_JAVA_HOME is invalid.\nPlease update it to a valid Java installation path or remove this environment variable.",
             "JAVA_TOO_OLD": "Please upgrade to Java %@ or above!\nYou are using Java %@",
@@ -34,6 +35,7 @@ enum L {
             "WARNING_TITLE": "警告",
             "CANCEL_BUTTON": "取消",
             "ERROR_OCCURRED": "遇到了一个问题:\n%@",
+            "UNSUPPORTED_MACOS": "不受支持的 macOS!\n最低支持的 macOS 版本为 10.15.",
             "HMCL_JAVA_HOME_INVALID": "HMCL_JAVA_HOME 所指向的 Java 路径无效，请更新或删除该变量",
             "JAVA_TOO_OLD": "请升级到 Java %@ 或更高版本！\n当前版本: Java %@",
             "JAVA_NOT_SUPPORTED_TITLE": "Java 版本不受支持",

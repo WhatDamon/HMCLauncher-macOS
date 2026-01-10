@@ -22,3 +22,14 @@ func getDarwinMajorVersion() -> Int {
 
     return Int(release.prefix { $0 != "." }) ?? 0
 }
+
+// MARK: - Function: Map Darwin Version to macOS Version
+func macOSVersionString(fromDarwin darwin: Int) -> String {
+    switch darwin {
+    case ..<19: return "unsupported"
+    case 19: return "10.15"
+    case 20...24: return "\(darwin - 9)"
+    case 25: return "26"
+    default: return "\(darwin + 1)"
+    }
+}
