@@ -61,22 +61,13 @@ private func extractJavaVersion(from output: String) -> String? {
 
 // MARK: - Function: JAVA_HOME Validation
 private func findJavaExecutable(in base: String) -> String? {
-    let fm = FileManager.default
-    let candidates = [
-        "bin/java",
-        "Contents/Home/bin/java",
-        "Home/bin/java",
-    ].map { (base as NSString).appendingPathComponent($0) }
-
-    let executable = candidates.first { fm.isExecutableFile(atPath: $0) }
-
-    if let exe = executable {
+    let exe = AppPath.findJavaExecutable(base: base)
+    if let exe {
         DebugLogger.log("Found Java executable at \(exe)", level: .debug)
     } else {
         DebugLogger.log("No Java executable found in \(base)", level: .warn)
     }
-
-    return executable
+    return exe
 }
 
 // MARK: - Function: Validate Java at Path

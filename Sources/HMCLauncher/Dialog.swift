@@ -17,12 +17,10 @@ func showDialog(
         return button returned of response
         """
 
-    let dirs = [
-        URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
-        URL(fileURLWithPath: FileManager.default.currentDirectoryPath).deletingLastPathComponent(),
-        URL(fileURLWithPath: FileManager.default.currentDirectoryPath).deletingLastPathComponent()
-            .deletingLastPathComponent(),
-    ]
+    let dirs: [URL] =
+        LauncherEnv.IS_INSIDE_APP_BUNDLE
+        ? AppPath.workingDirectoryChain(depth: 2)
+        : [AppPath.workingDirectory]
 
     for dir in dirs {
         let process = Process()

@@ -1,6 +1,35 @@
 import Foundation
 
 enum AppPath {
+    // MARK: - Function: Current working directory as URL
+    static var workingDirectory: URL {
+        URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    }
+
+    // MARK: - Function: Returns cwd, parent, grandparent, etc
+    static func workingDirectoryChain(depth: Int = 2) -> [URL] {
+        var urls: [URL] = [workingDirectory]
+        var current = workingDirectory
+
+        for _ in 0..<depth {
+            current = current.deletingLastPathComponent()
+            urls.append(current)
+        }
+        return urls
+    }
+
+    // MARK: - Function: Locate a Java executable under a base directory
+    static func findJavaExecutable(base: String) -> String? {
+        let fm = FileManager.default
+        let candidates = [
+            "bin/java",
+            "Contents/Home/bin/java",
+            "Home/bin/java",
+        ].map { (base as NSString).appendingPathComponent($0) }
+
+        return candidates.first { fm.isExecutableFile(atPath: $0) }
+    }
+
     // MARK: - Function: Get absolute path to the running executable
     static func executableURL() -> URL {
         URL(fileURLWithPath: CommandLine.arguments[0])
@@ -30,9 +59,8 @@ enum AppPath {
 
         let fm = FileManager.default
         return
-            fm.fileExists(atPath: contents.path) &&
-            fm.fileExists(atPath: macOS.path) &&
-            fm.fileExists(atPath: infoPlist.path)
+            fm.fileExists(atPath: contents.path) && fm.fileExists(atPath: macOS.path)
+            && fm.fileExists(atPath: infoPlist.path)
     }
 
     // MARK: - Function: Get ~/Library/Application Support
