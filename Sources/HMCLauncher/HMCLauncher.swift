@@ -4,17 +4,13 @@ import Foundation
 @main
 struct HMCLauncher {
     static func main() {
-        DebugLogger.log("HMCLauncher-macOS \(LauncherEnv.LAUNCHER_VER) Start", level: .info)
+        basicInfoOutput()
 
         if LauncherEnv.DARWIN_VER < 19 {
             DebugLogger.log(
                 "Unsupported macOS detected: Darwin \(LauncherEnv.DARWIN_VER)", level: .error)
             showDialog(L.t("UNSUPPPRTED_MACOS"), title: L.t("WARNING_TITLE"), isWarning: true)
             exit(1)
-        }
-
-        if LauncherEnv.IS_INSIDE_APP_BUNDLE == false {
-            DebugLogger.log("HMCLauncher-macOS is not running inside the App Bundle!", level: .warn)
         }
 
         do {
