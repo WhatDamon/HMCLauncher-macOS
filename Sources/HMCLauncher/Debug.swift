@@ -9,7 +9,7 @@ struct DebugLogger {
         case error = "ERROR"
     }
 
-    static var isEnabled: Bool { LauncherEnv.isDebug }
+    static var isEnabled: Bool { LauncherEnv.IS_DEBUG }
     static let logURL: URL? = LauncherEnv.logURL
 
     private static let formatter: DateFormatter = {

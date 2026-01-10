@@ -6,6 +6,10 @@ struct HMCLauncher {
     static func main() {
         DebugLogger.log("HMCLauncher-macOS \(LauncherEnv.LAUNCHER_VER) Start", level: .info)
 
+        if LauncherEnv.IS_INSIDE_APP_BUNDLE == false {
+            DebugLogger.log("MCLauncher-macOS is not running inside the App Bundle!", level: .warn)
+        }
+
         do {
             DebugLogger.log("Attempting to select JAVA_HOME...", level: .debug)
             let source = try selectJavaHome()

@@ -8,7 +8,7 @@ struct LauncherEnv {
     static let IS_INSIDE_APP_BUNDLE = AppPath.isRunningInsideAppBundle()
 
     // Debug mode
-    static let isDebug: Bool = {
+    static let IS_DEBUG: Bool = {
         #if DEBUG
             return true
         #else
@@ -26,7 +26,7 @@ struct LauncherEnv {
     static let urlJavaDownloadLinkArm64 = "https://docs.hmcl.net/downloads/macos/arm64.html"
     static let urlJavaDownloadLinkX86_64 = "https://docs.hmcl.net/downloads/macos/x86_64.html"
     static let logURL: URL? = {
-        guard isDebug else { return nil }
+        guard IS_DEBUG else { return nil }
         do {
             return try AppPath.newLogFileURL()
         } catch {
