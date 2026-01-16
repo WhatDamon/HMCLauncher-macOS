@@ -12,25 +12,18 @@ let package = Package(
         .executableTarget(
             name: "HMCLauncher",
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug)),
                 .unsafeFlags(
                     [
+                        "-Osize",
                         "-whole-module-optimization",
-                        "-cross-module-optimization",
-                        "-enable-library-evolution",
-                    ], .when(configuration: .release)),
+                    ],
+                    .when(configuration: .release)
+                )
             ],
-            linkerSettings: [
-                .unsafeFlags(
-                    [
-                        "-flto"
-                    ], .when(configuration: .release))
-            ]
         ),
         .testTarget(
             name: "HMCLauncherTests",
-            dependencies: ["HMCLauncher"],
-            path: "Tests"
-        )
+            dependencies: ["HMCLauncher"]
+        ),
     ]
 )

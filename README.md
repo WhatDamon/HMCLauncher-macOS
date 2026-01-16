@@ -15,7 +15,7 @@ HMCL Launcher for macOS.
 __REQUIRE MACOS TO BUILD!__
 
 ```bash
-swift build -c release --arch arm64 --arch x86_64
+./build.sh
 ```
 
 This command will build a release universal binary.
