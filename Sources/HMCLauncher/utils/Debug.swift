@@ -9,7 +9,7 @@ struct DebugLogger {
         case error = "ERROR"
     }
 
-    static var isEnabled: Bool { LauncherEnv.IS_DEBUG }
+    static var isDebug: Bool { LauncherEnv.IS_DEBUG }
     static let logURL: URL? = LauncherEnv.logURL
 
     private static let formatter: DateFormatter = {
@@ -24,7 +24,9 @@ struct DebugLogger {
         file: String = #fileID,
         line: Int = #line
     ) {
-        guard isEnabled else { return }
+        if level == .debug && !isDebug {
+            return
+        }
 
         let time = formatter.string(from: Date())
         let filename = file.split(separator: "/").last ?? ""
@@ -33,7 +35,10 @@ struct DebugLogger {
 
         print(lineText)
 
-        if let url = logURL, let data = (lineText + "\n").data(using: .utf8) {
+        if isDebug,
+            let url = logURL,
+            let data = (lineText + "\n").data(using: .utf8)
+        {
             append(data, to: url)
         }
     }
