@@ -7,13 +7,13 @@ func basicInfoOutput() {
     DebugLogger.log("- Architecture: \(currentArch())", level: .info)
     DebugLogger.log("- Running inside App Bundle: \(LauncherEnv.IS_INSIDE_APP_BUNDLE)", level: .info)
     
-    if !LauncherEnv.ARGS.isEmpty {
-        DebugLogger.log("- Command-line arguments (\(LauncherEnv.ARGS.count)):", level: .info)
-        for (i, arg) in LauncherEnv.ARGS.enumerated() {
+    if !LauncherEnv.JVM_ARGS.isEmpty {
+        DebugLogger.log("- JVM Options (\(LauncherEnv.JVM_ARGS.count)):", level: .info)
+        for (i, arg) in LauncherEnv.JVM_ARGS.enumerated() {
             DebugLogger.log("  [\(i)]: \(arg)", level: .info)
         }
     } else {
-        DebugLogger.log("- No command-line arguments provided", level: .info)
+        DebugLogger.log("- JVM Options: Null", level: .info)
     }
 
     DebugLogger.log("- Current working directory: \(AppPath.workingDirectory.path)", level: .info)
