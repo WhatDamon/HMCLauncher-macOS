@@ -29,7 +29,7 @@ struct DebugLogger {
         let time = formatter.string(from: Date())
         let filename = file.split(separator: "/").last ?? ""
         let lineText =
-            "[\(time)][\(level.rawValue)][HMCLauncher-macOS][\(filename):\(line)] \(message)"
+            "[\(time)] [HMCLauncher-macOS:\(filename):\(line)/\(level.rawValue)] \(message)"
 
         print(lineText)
 
