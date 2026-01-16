@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Basic Information Output
 func basicInfoOutput() {
-    DebugLogger.log("***** HMCLauncher-macOS \(LauncherEnv.LAUNCHER_VER) *****", level: .info)
+    DebugLogger.log("*** HMCL Launcher for macOS \(LauncherEnv.LAUNCHER_VER) ***", level: .info)
     DebugLogger.log("- OS: macOS \(LauncherEnv.MACOS_VER) (Darwin \(LauncherEnv.DARWIN_VER))", level: .info)
     DebugLogger.log("- Architecture: \(currentArch())", level: .info)
     DebugLogger.log("- Running inside App Bundle: \(LauncherEnv.IS_INSIDE_APP_BUNDLE)", level: .info)
