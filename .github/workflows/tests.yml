@@ -17,20 +17,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Setup Swift
+        uses: fwal/setup-swift@v2
+        with:
+          swift-version: '6.1.0'
 
-      - name: Install xcpretty
-        run: gem install xcpretty
-
-      - name: Run tests (JUnit report)
+      - name: Run tests
+        id: run_tests
         run: |
-          set -o pipefail
-          swift test --verbose \
-            | xcpretty --report junit --output test-results.xml
+          mkdir -p test-results
 
-      - name: Upload test report
+          # Run tests and capture output
+          xcodebuild -scheme HMCLauncher -destination 'platform=macOS' test | tee test-results/results.log
+
+          # Count passed and failed tests
+          PASSED=$(grep -c "passed" test-results/results.log || echo 0)
+          FAILED=$(grep -c "failed" test-results/results.log || echo 0)
+
+          # Create Markdown summary
+          echo "## 🧪 HMCLauncher Test Results" > test-results/summary.md
+          echo "- ✅ Passed: $PASSED" >> test-results/summary.md
+          echo "- ❌ Failed: $FAILED" >> test-results/summary.md
+
+          # Show failed tests in detail
+          if [ "$FAILED" -gt 0 ]; then
+              echo "" >> test-results/summary.md
+              echo "### Failed Tests" >> test-results/summary.md
+              grep -E "XCTFail|failed" test-results/results.log | sed 's/^/- /' >> test-results/summary.md
+          fi
+
+          # Collapsible full log
+          echo "" >> test-results/summary.md
+          echo "<details>" >> test-results/summary.md
+          echo "<summary>Click to expand full test log</summary>" >> test-results/summary.md
+          echo "" >> test-results/summary.md
+          cat test-results/results.log >> test-results/summary.md
+          echo "</details>" >> test-results/summary.md
+
+          # Append to GitHub Job Summary (shown on Job homepage)
+          cat test-results/summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload test log
         uses: actions/upload-artifact@v4
         with:
-          name: swift-test-report
-          path: test-results.xml
+          name: test-log
+          path: test-results/results.log
