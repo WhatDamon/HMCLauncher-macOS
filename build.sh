@@ -12,70 +12,111 @@ NC='\033[0m'
 BIN_NAME="HMCLauncher"
 DIST_DIR="dist"
 
-mkdir -p "$DIST_DIR"
+RUN_TESTS=true
+STRIP_BINARY=true
+TARGET_ARCH="universal"
+
+mkdir -p "$DIST_DIR/arm64" "$DIST_DIR/x86_64"
 
 # Functions
-print_step() {
-    echo -e "${CYAN}==> $1${NC}"
+step() { echo -e "${CYAN}==> $1${NC}"; }
+ok()   { echo -e "${GREEN}✔ $1${NC}"; }
+warn() { echo -e "${YELLOW}! $1${NC}"; }
+fail() { echo -e "${RED}✖ $1${NC}"; exit 1; }
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+
+Options:
+  -h, --help            Show this help message and exit
+  -t, --bypass-tests    Skip running tests
+  -s, --no-strip        Do not strip the final binary
+  -a, --arch <arch>     Build single architecture (arm64 | x86_64)
+EOF
 }
 
-print_success() {
-    echo -e "${GREEN}✔ $1${NC}"
-}
+# Argument Parsing
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -t|--bypass-tests)
+      RUN_TESTS=false
+      ;;
+    -s|--no-strip)
+      STRIP_BINARY=false
+      ;;
+    -a|--arch)
+      [[ $# -ge 2 ]] || fail "--arch requires a value"
+      TARGET_ARCH="$2"
+      shift
+      ;;
+    *)
+      fail "Unknown argument: $1 (use --help)"
+      ;;
+  esac
+  shift
+done
 
-print_warning() {
-    echo -e "${YELLOW}! $1${NC}"
-}
-
-print_error() {
-    echo -e "${RED}✖ $1${NC}"
-}
-
-# Build Steps
-
-# Arm64 slice
-print_step "Building arm64 slice..."
-if swift build -c release --arch arm64 --build-path .build/arm64 \
-    -Xswiftc -Osize -Xswiftc -whole-module-optimization; then
-    print_success "arm64 build complete!"
+# Tests
+if $RUN_TESTS; then
+  step "Running tests..."
+  swift test || fail "Tests failed. Aborting build."
+  ok "All tests passed!"
 else
-    print_error "arm64 build failed!"
-    exit 1
+  warn "Tests bypassed"
 fi
 
-# x86_64 slice
-print_step "Building x86_64 slice..."
-if swift build -c release --arch x86_64 --build-path .build/x86_64 \
-    -Xswiftc -Osize -Xswiftc -whole-module-optimization; then
-    print_success "x86_64 build complete!"
+# Build Function
+build_arch() {
+  local arch="$1"
+  step "Building $arch slice..."
+  swift build -c release --arch "$arch" --build-path ".build/$arch" \
+    -Xswiftc -Osize \
+    -Xswiftc -whole-module-optimization
+  ok "$arch build complete!"
+}
+
+# Build
+case "$TARGET_ARCH" in
+  arm64|x86_64)
+    build_arch "$TARGET_ARCH"
+    cp ".build/$TARGET_ARCH/release/$BIN_NAME" \
+        "$DIST_DIR/$TARGET_ARCH/$BIN_NAME"
+    FINAL_BIN="$DIST_DIR/$TARGET_ARCH/$BIN_NAME"
+    ;;
+  universal)
+    build_arch arm64
+    build_arch x86_64
+    step "Creating universal binary..."
+    lipo -create \
+        "$DIST_DIR/arm64/$BIN_NAME" \
+        "$DIST_DIR/x86_64/$BIN_NAME" \
+        -output "$DIST_DIR/$BIN_NAME"
+    ok "Universal binary created!"
+    FINAL_BIN="$DIST_DIR/$BIN_NAME"
+    ;;
+  *)
+    fail "Invalid architecture: $TARGET_ARCH"
+    ;;
+esac
+
+# Strip
+if $STRIP_BINARY; then
+  step "Stripping symbols..."
+  strip -x "$FINAL_BIN"
+  ok "Stripping complete!"
 else
-    print_error "x86_64 build failed!"
-    exit 1
+  warn "Stripping skipped"
 fi
 
-# Combine into universal binary
-print_step "Creating universal binary..."
-ARM_BIN=".build/arm64/release/$BIN_NAME"
-X64_BIN=".build/x86_64/release/$BIN_NAME"
-UNIVERSAL_BIN="$DIST_DIR/$BIN_NAME"
+# Report
+step "Build complete"
+echo "Binary: $FINAL_BIN"
+lipo -archs "$FINAL_BIN" 2>/dev/null || true
+ls -lh "$FINAL_BIN"
 
-if lipo -create "$ARM_BIN" "$X64_BIN" -output "$UNIVERSAL_BIN"; then
-    print_success "Universal binary created!"
-else
-    print_error "Failed to create universal binary!"
-    exit 1
-fi
-
-# Strip debug symbols
-print_step "Stripping debug symbols for minimal size..."
-strip -x "$UNIVERSAL_BIN"
-print_success "Stripping complete!"
-
-# Final Report
-echo -e "${CYAN}Build complete!${NC}"
-echo -e "${CYAN}Output file:${NC} $UNIVERSAL_BIN"
-lipo -archs "$UNIVERSAL_BIN"
-ls -lh "$UNIVERSAL_BIN"
-
-# Optional clean-up warning
-print_warning "Intermediate build files are in .build/ (can be removed if not needed)"
+warn "Intermediate files remain in .build/ (safe to remove)"
