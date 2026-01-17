@@ -2,6 +2,7 @@ import XCTest
 
 @testable import HMCLauncher
 
+@MainActor
 final class SystemUtilTests: XCTestCase {
     // MARK: - SystemUtil Tests
     func testCurrentArch() throws {

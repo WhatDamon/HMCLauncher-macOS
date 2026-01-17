@@ -2,6 +2,7 @@ import XCTest
 
 @testable import HMCLauncher
 
+@MainActor
 final class LocalizationTests: XCTestCase {
     // MARK: - Localization Tests
 

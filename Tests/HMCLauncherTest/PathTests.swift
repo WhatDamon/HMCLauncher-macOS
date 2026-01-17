@@ -2,6 +2,7 @@ import XCTest
 
 @testable import HMCLauncher
 
+@MainActor
 final class PathTests: XCTestCase {
     // MARK: - Path Tests
     func testWorkingDirectory() throws {
