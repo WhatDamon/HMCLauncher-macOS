@@ -90,7 +90,11 @@ case "$TARGET_ARCH" in
     ;;
   universal)
     build_arch arm64
+    cp ".build/arm64/release/$BIN_NAME" "$DIST_DIR/arm64/$BIN_NAME"
+
     build_arch x86_64
+    cp ".build/x86_64/release/$BIN_NAME" "$DIST_DIR/x86_64/$BIN_NAME"
+
     step "Creating universal binary..."
     lipo -create \
         "$DIST_DIR/arm64/$BIN_NAME" \
