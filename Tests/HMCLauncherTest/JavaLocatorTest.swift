@@ -62,7 +62,7 @@ final class JavaLocatorTests: XCTestCase {
         await mockSystem(javaList: [], arch: "x86_64", darwin: 23)
 
         do {
-            _ = try await selectJavaHome(minVersion: JavaVersion(major: 17))
+            _ = try selectJavaHome(minVersion: JavaVersion(major: 17))
             XCTFail("Expected noJavaInstalled error")
         } catch let e as JavaSelectionError {
             XCTAssertEqual(e.description, "No Java installation found.")
@@ -73,7 +73,7 @@ final class JavaLocatorTests: XCTestCase {
         let java17 = makeJava(major: 17, path: "/fake/java17")
         await mockSystem(javaList: [java17], arch: "arm64", darwin: 23)
 
-        let selected = try await selectJavaHome(minVersion: JavaVersion(major: 17))
+        let selected = try selectJavaHome(minVersion: JavaVersion(major: 17))
         switch selected {
         case .autoDetected(let path):
             XCTAssertEqual(path, java17.path)
@@ -86,7 +86,7 @@ final class JavaLocatorTests: XCTestCase {
         let javaX86 = makeJava(major: 17, arch: "x86_64", path: "/fake/javaX86")
         await mockSystem(javaList: [javaX86], arch: "arm64", darwin: 23)
 
-        let selected = try await selectJavaHome(minVersion: JavaVersion(major: 17))
+        let selected = try selectJavaHome(minVersion: JavaVersion(major: 17))
         switch selected {
         case .autoDetected(let path):
             XCTAssertEqual(path, javaX86.path)
@@ -100,7 +100,7 @@ final class JavaLocatorTests: XCTestCase {
         await mockSystem(javaList: [javaX86], arch: "arm64", darwin: 26)
 
         do {
-            _ = try await selectJavaHome(minVersion: JavaVersion(major: 17))
+            _ = try selectJavaHome(minVersion: JavaVersion(major: 17))
             XCTFail("Expected noArm64OnNewMacOS error")
         } catch let e as JavaSelectionError {
             XCTAssertTrue(
