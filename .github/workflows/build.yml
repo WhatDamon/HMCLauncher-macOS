@@ -1,0 +1,30 @@
+name: Build Binaries
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    name: Build CLI Binaries
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Make build script executable
+        run: chmod +x build.sh
+
+      - name: Build binaries
+        run: ./build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HMCLauncher-binaries
+          path: dist/
