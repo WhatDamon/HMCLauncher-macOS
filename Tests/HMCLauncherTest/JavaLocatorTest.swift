@@ -17,11 +17,9 @@ final class JavaLocatorTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        await MainActor.run {
-            _findAllJavaInstallations = originalFindAll
-            _currentArch = originalArch
-            _getDarwinMajorVersion = originalDarwin
-        }
+        _findAllJavaInstallations = originalFindAll
+        _currentArch = originalArch
+        _getDarwinMajorVersion = originalDarwin
         try await super.tearDown()
     }
 
@@ -46,11 +44,9 @@ final class JavaLocatorTests: XCTestCase {
         arch: String,
         darwin: Int
     ) async {
-        await MainActor.run {
-            _findAllJavaInstallations = { javaList }
-            _currentArch = { arch }
-            _getDarwinMajorVersion = { darwin }
-        }
+        _findAllJavaInstallations = { javaList }
+        _currentArch = { arch }
+        _getDarwinMajorVersion = { darwin }
     }
 
     // MARK: - Tests
