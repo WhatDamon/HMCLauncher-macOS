@@ -23,7 +23,11 @@ let package = Package(
         ),
         .testTarget(
             name: "HMCLauncherTests",
-            dependencies: ["HMCLauncher"]
+            dependencies: ["HMCLauncher"],
+            swiftSettings: [
+                .unsafeFlags(
+                    ["-Xfrontend", "-disable-concurrency-checks"], .when(configuration: .debug))
+            ]
         ),
     ]
 )
