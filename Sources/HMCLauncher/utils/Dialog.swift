@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Function: Show Error Dialog
-func showDialog(
+public func showDialog(
     _ message: String,
     title: String = L.t("ERROR_TITLE"),
     buttons: [String] = ["OK"],

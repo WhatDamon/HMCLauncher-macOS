@@ -1,13 +1,13 @@
 import Foundation
 
 // MARK: - Enum: Localization Helper
-enum L {
+public enum L {
     enum Language: String, CaseIterable {
         case en
         case zhHans = "zh-Hans"
     }
 
-    static let current: Language = {
+    private static let current: Language = {
         let languages: [String]? =
             UserDefaults.standard.array(forKey: "AppleLanguages") as? [String]
         let primaryLang: String = languages?.first?.lowercased() ?? "en"
@@ -45,8 +45,8 @@ enum L {
         ],
     ]
 
-    // MARK: Public API
-    static func t(_ key: String, _ args: CVarArg...) -> String {
+    // MARK: - Public API
+    public static func t(_ key: String, _ args: CVarArg...) -> String {
         let table: [String: String] = localizedStrings[current] ?? [:]
         let template: String = table[key] ?? localizedStrings[.en]?[key] ?? key
         return String(format: template, arguments: args)

@@ -118,7 +118,7 @@ private func javaHomeXData() -> Data? {
 }
 
 // MARK: - Function: Public API
-func findAllJavaInstallations() -> [JavaInstallation] {
+internal func findAllJavaInstallations() -> [JavaInstallation] {
     guard
         let data = javaHomeXData(),
         let list = try? PropertyListSerialization.propertyList(

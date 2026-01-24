@@ -71,7 +71,7 @@ private func findJavaExecutable(in base: String) -> String? {
 }
 
 // MARK: - Function: Validate Java at Path
-func validateJavaAtPath(
+internal func validateJavaAtPath(
     _ basePath: String,
     minVersion: JavaVersion
 ) throws -> JavaHomeSource {
@@ -135,7 +135,7 @@ func validateJavaAtPath(
 
 // MARK: - Function: Java Selection
 @MainActor
-func selectJavaHome(
+internal func selectJavaHome(
     minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)")!
 ) throws -> JavaHomeSource {
 

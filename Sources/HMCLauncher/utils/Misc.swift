@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Basic Information Output
-func basicInfoOutput() {
+public func basicInfoOutput() {
     DebugLogger.log("*** HMCL Launcher for macOS \(LauncherEnv.LAUNCHER_VER) ***", level: .info)
     DebugLogger.log("- OS: macOS \(LauncherEnv.MACOS_VER) (Darwin \(LauncherEnv.DARWIN_VER))", level: .info)
     DebugLogger.log("- Architecture: \(currentArch())", level: .info)
@@ -21,7 +21,7 @@ func basicInfoOutput() {
 }
 
 // MARK: - Function: Open Java Download Page
-func downloadJava() {
+public func downloadJava() {
     let url =
         currentArch() == "arm64"
         ? LauncherEnv.urlJavaDownloadLinkArm64
