@@ -48,47 +48,9 @@ struct LauncherEnv {
         return Array(merged.values)
     }()
 
-
     // Logging
     static let logURL: URL? = {
         guard IS_DEBUG else { return nil }
         return try? AppPath.newLogFileURL()
     }()
-
-
-    // JVM Argument Helpers
-    private static func parseJVMArgs(from source: Any?) -> [String] {
-        let args: [String]
-
-        if let str = source as? String {
-            args = str.split(separator: " ").map(String.init)
-        } else if let arr = source as? [String] {
-            args = arr
-        } else {
-            return []
-        }
-
-        return args.filter(isJVMArg)
-    }
-
-    private static func isJVMArg(_ arg: String) -> Bool {
-        arg.hasPrefix("-X")
-            || arg.hasPrefix("-D")
-            || arg.hasPrefix("-XX:")
-            || arg.hasPrefix("--add-")
-    }
-
-    private static func jvmArgKey(_ arg: String) -> String {
-        if arg.hasPrefix("-D") || arg.hasPrefix("-XX:") {
-            return arg.split(separator: "=", maxSplits: 1)
-                .first
-                .map(String.init) ?? arg
-        }
-
-        if arg.hasPrefix("-X") {
-            return String(arg.prefix(4))
-        }
-
-        return arg
-    }
 }
