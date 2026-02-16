@@ -168,7 +168,7 @@ internal func selectJavaHome(
     let arch = _currentArch()
     let darwin = _getDarwinMajorVersion()
     let allowX86 =
-        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" && darwin < 26
+        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" && darwin < 27
 
     let candidates = all.filtered(byMinVersion: minVersion)
     DebugLogger.log("Filtered \(candidates.count) candidates >= min version", level: .debug)
