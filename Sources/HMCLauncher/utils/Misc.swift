@@ -34,7 +34,7 @@ public func downloadJava() {
     do {
         try process.run()
     } catch {
-        print("Failed to open Java download link: \(error)")
+        DebugLogger.log("Failed to open Java download link: \(error)", level: .error)
         showDialog(L.t("CANNOT_OPEN_JAVA_DOWNLOAD", "\(url)"), isWarning: true)
     }
 }
