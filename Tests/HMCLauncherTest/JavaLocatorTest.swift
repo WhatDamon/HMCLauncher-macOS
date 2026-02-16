@@ -87,13 +87,13 @@ final class JavaLocatorTests: XCTestCase {
         }
     }
 
-    // MARK: - Test: No ARM64 Java on macOS 26+
+    // MARK: - Test: No ARM64 Java on macOS 27+
     func testNoArm64OnNewMacOS() async {
         let javaX86 = makeJava(major: 17, arch: "x86_64", path: "/fake/javaX86")
         await MainActor.run {
             _findAllJavaInstallations = { [javaX86] }
             _currentArch = { "arm64" }
-            _getDarwinMajorVersion = { 26 }
+            _getDarwinMajorVersion = { 27 }
         }
 
         do {
