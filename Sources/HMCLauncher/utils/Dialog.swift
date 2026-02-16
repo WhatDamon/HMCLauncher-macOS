@@ -24,6 +24,7 @@ public func showDialog(
 
     for dir in dirs {
         let process = Process()
+        defer { process.terminate() } 
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", script]
         process.currentDirectoryURL = dir

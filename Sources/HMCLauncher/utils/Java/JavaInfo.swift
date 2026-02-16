@@ -92,6 +92,7 @@ internal struct JavaInstallation {
 // MARK: - Function: Get Java Home Data
 private func javaHomeXData() -> Data? {
     let p = Process()
+    defer { p.terminate() } 
     p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
     p.arguments = ["-X"]
 

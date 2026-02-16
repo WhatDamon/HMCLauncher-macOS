@@ -84,6 +84,7 @@ internal func validateJavaAtPath(
     }
 
     let p = Process()
+    defer { p.terminate() } 
     let pipe = Pipe()
     p.executableURL = URL(fileURLWithPath: java)
     p.arguments = ["-version"]

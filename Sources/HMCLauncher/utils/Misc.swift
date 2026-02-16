@@ -28,6 +28,7 @@ public func downloadJava() {
         : LauncherEnv.urlJavaDownloadLinkX86_64
 
     let process = Process()
+    defer { process.terminate() } 
     process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
     process.arguments = [url]
 
