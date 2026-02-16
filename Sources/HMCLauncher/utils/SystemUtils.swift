@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK:- Function: Get the device current CPU architecture
-func currentArch() -> String {
+public func currentArch() -> String {
     #if arch(arm64)
         return "arm64"
     #else
@@ -10,7 +10,7 @@ func currentArch() -> String {
 }
 
 // MARK: - Function: Get macOS Darwin Major Version
-func getDarwinMajorVersion() -> Int {
+public func getDarwinMajorVersion() -> Int {
     var uts = utsname()
     uname(&uts)
 
@@ -24,7 +24,7 @@ func getDarwinMajorVersion() -> Int {
 }
 
 // MARK: - Function: Map Darwin Version to macOS Version
-func macOSVersionString(fromDarwin darwin: Int) -> String {
+public func macOSVersionString(fromDarwin darwin: Int) -> String {
     switch darwin {
     case ..<19: return "unsupported"
     case 19: return "10.15"

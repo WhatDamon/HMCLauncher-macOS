@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Environment & Arguments
-struct LauncherEnv {
+public struct LauncherEnv {
     // User / Build Configurable Values
 
     static let LAUNCHER_VER = "3.8.0"

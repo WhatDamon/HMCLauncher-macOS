@@ -1,13 +1,13 @@
 import Foundation
 
-enum AppPath {
+public enum AppPath {
     // MARK: - Function: Current working directory as URL
-    static var workingDirectory: URL {
+    internal static var workingDirectory: URL {
         URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     }
 
     // MARK: - Function: Returns cwd, parent, grandparent, etc
-    static func workingDirectoryChain(depth: Int = 2) -> [URL] {
+    internal static func workingDirectoryChain(depth: Int = 2) -> [URL] {
         var urls: [URL] = [workingDirectory]
         var current = workingDirectory
 
@@ -19,7 +19,7 @@ enum AppPath {
     }
 
     // MARK: - Function: Locate a Java executable under a base directory
-    static func findJavaExecutable(base: String) -> String? {
+    internal static func findJavaExecutable(base: String) -> String? {
         let fm = FileManager.default
         let candidates = [
             "bin/java",
@@ -31,13 +31,13 @@ enum AppPath {
     }
 
     // MARK: - Function: Get absolute path to the running executable
-    static func executableURL() -> URL {
+    internal static func executableURL() -> URL {
         URL(fileURLWithPath: CommandLine.arguments[0])
             .standardizedFileURL
     }
 
     // MARK: - Function: Check Path to the enclosing .app bundle
-    static func appBundleURL() -> URL? {
+    internal static func appBundleURL() -> URL? {
         var url = executableURL()
 
         while url.pathComponents.count > 1 {
@@ -50,7 +50,7 @@ enum AppPath {
     }
 
     // MARK: - Function: Is inside a valid macOS App Bundle
-    static func isRunningInsideAppBundle() -> Bool {
+    internal static func isRunningInsideAppBundle() -> Bool {
         guard let bundleURL = appBundleURL() else { return false }
 
         let contents = bundleURL.appendingPathComponent("Contents", isDirectory: true)
@@ -64,7 +64,7 @@ enum AppPath {
     }
 
     // MARK: - Function: Get ~/Library/Application Support
-    static func applicationSupportDirectory() throws -> URL {
+    internal static func applicationSupportDirectory() throws -> URL {
         try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -74,7 +74,7 @@ enum AppPath {
     }
 
     // MARK: - Function: Get log directory
-    static func logsDirectory() throws -> URL {
+    internal static func logsDirectory() throws -> URL {
         let dir = try applicationSupportDirectory()
             .appendingPathComponent("hmcl", isDirectory: true)
             .appendingPathComponent("hmclauncher-logs", isDirectory: true)
@@ -88,7 +88,7 @@ enum AppPath {
     }
 
     // MARK: - Function: Log file URL
-    static func newLogFileURL(
+    internal static func newLogFileURL(
         prefix: String = "HMCLauncher-macOS"
     ) throws -> URL {
 

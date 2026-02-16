@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Enum: Localization Helper
 public enum L {
-    enum Language: String, CaseIterable {
+    internal enum Language: String, CaseIterable {
         case en
         case zhHans = "zh-Hans"
     }

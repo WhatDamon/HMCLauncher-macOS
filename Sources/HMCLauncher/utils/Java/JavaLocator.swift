@@ -6,13 +6,13 @@ import Foundation
 @MainActor var _getDarwinMajorVersion: () -> Int = getDarwinMajorVersion
 
 // MARK: - Enum: JavaHome Source
-enum JavaHomeSource {
+internal enum JavaHomeSource {
     case environment(path: String)
     case autoDetected(path: String)
 }
 
 // MARK: - Enum: Errors
-enum JavaSelectionError: Error, CustomStringConvertible {
+internal enum JavaSelectionError: Error, CustomStringConvertible {
     case invalidJavaHome
     case userSpecifiedJavaVersionTooLow(
         path: String, detectedVersion: String, required: JavaVersion)

@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Struct: JavaVersion
-struct JavaVersion: Comparable, CustomStringConvertible {
+internal struct JavaVersion: Comparable, CustomStringConvertible {
     let major: Int
     let minor: Int
     let security: Int
@@ -55,7 +55,7 @@ struct JavaVersion: Comparable, CustomStringConvertible {
 }
 
 // MARK: - Struct: JavaInstallation
-struct JavaInstallation {
+internal struct JavaInstallation {
     let versionStr, arch, vendor, displayName, path: String
     let version: JavaVersion
 
