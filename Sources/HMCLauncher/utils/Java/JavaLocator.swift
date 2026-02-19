@@ -137,7 +137,7 @@ internal func validateJavaAtPath(
 // MARK: - Function: Java Selection
 @MainActor
 internal func selectJavaHome(
-    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)")!
+    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)") ?? JavaVersion(major: LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)
 ) throws -> JavaHomeSource {
 
     DebugLogger.log("Selecting JavaHome with minimum version \(minVersion)", level: .info)

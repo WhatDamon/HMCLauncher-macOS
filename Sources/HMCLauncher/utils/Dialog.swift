@@ -1,5 +1,11 @@
 import Foundation
 
+// MARK: - Function: Escape string for AppleScript
+private func escapeForAppleScript(_ str: String) -> String {
+    str.replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "\"", with: "\\\"")
+}
+
 // MARK: - Function: Show Error Dialog
 public func showDialog(
     _ message: String,
@@ -8,12 +14,14 @@ public func showDialog(
     isWarning: Bool = false,
     onButtonPressed: ((String) -> Void)? = nil
 ) {
-    let buttonsList = buttons.map { "\"\($0)\"" }.joined(separator: ", ")
-    let defaultButton = "\"\(buttons.first ?? "OK")\""
+    let escapedTitle = escapeForAppleScript(title)
+    let escapedMessage = escapeForAppleScript(message)
+    let buttonsList = buttons.map { "\"\(escapeForAppleScript($0))\"" }.joined(separator: ", ")
+    let defaultButton = "\"\(escapeForAppleScript(buttons.first ?? "OK"))\""
     let styleArg = isWarning ? "as critical" : ""
 
     let script = """
-        set response to display alert "\(title)" message "\(message)" \(styleArg) buttons {\(buttonsList)} default button \(defaultButton)
+        set response to display alert "\(escapedTitle)" message "\(escapedMessage)" \(styleArg) buttons {\(buttonsList)} default button \(defaultButton)
         return button returned of response
         """
 
