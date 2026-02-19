@@ -1,11 +1,60 @@
 import Foundation
 
+// MARK: - Shell Argument Parser
+private func parseShellArgs(_ input: String) -> [String] {
+    var args: [String] = []
+    var current = ""
+    var inSingleQuote = false
+    var inDoubleQuote = false
+    var escaping = false
+
+    for char in input {
+        if escaping {
+            current.append(char)
+            escaping = false
+            continue
+        }
+
+        switch char {
+        case "\\":
+            escaping = true
+        case "'":
+            if inDoubleQuote {
+                current.append(char)
+            } else {
+                inSingleQuote.toggle()
+            }
+        case "\"":
+            if inSingleQuote {
+                current.append(char)
+            } else {
+                inDoubleQuote.toggle()
+            }
+        case " ", "\t", "\n":
+            if inSingleQuote || inDoubleQuote {
+                current.append(char)
+            } else if !current.isEmpty {
+                args.append(current)
+                current = ""
+            }
+        default:
+            current.append(char)
+        }
+    }
+
+    if !current.isEmpty {
+        args.append(current)
+    }
+
+    return args
+}
+
 // MARK: - JVM Argument Helpers
 public func parseJVMArgs(from source: Any?) -> [String] {
     let args: [String]
 
     if let str = source as? String {
-        args = str.split(separator: " ").map(String.init)
+        args = parseShellArgs(str)
     } else if let arr = source as? [String] {
         args = arr
     } else {
