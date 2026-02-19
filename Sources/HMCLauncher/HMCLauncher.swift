@@ -14,20 +14,20 @@ public struct HMCLauncher {
         }
 
         do {
-            DebugLogger.log("Attempting to select JAVA_HOME...", level: .debug)
-            let source = try selectJavaHome()
+            let javaHomeSource = try selectJavaHome()
             let javaHome: String
 
-            switch source {
+            switch javaHomeSource {
             case .environment(let path):
-                DebugLogger.log("Using user-specified JAVA_HOME: \(path)", level: .info)
+                DebugLogger.log("Using JAVA_HOME: \(path)", level: .info)
                 javaHome = path
             case .autoDetected(let path):
                 DebugLogger.log("Auto-detected JAVA_HOME: \(path)", level: .info)
                 javaHome = path
             }
 
-            DebugLogger.log("Final JAVA_HOME selected: \(javaHome)", level: .debug)
+            try launchHMCL(javaHome: javaHome)
+
         } catch JavaSelectionError.invalidJavaHome {
             DebugLogger.log("Invalid JAVA_HOME detected", level: .warn)
             showDialog(
@@ -38,61 +38,77 @@ public struct HMCLauncher {
             exit(1)
         } catch JavaSelectionError.newestTooLow(let installation, _) {
             DebugLogger.log(
-                "Newest installed Java (\(installation.versionStr)) is lower than required (\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION))",
+                "Java \(installation.versionStr) < required \(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)",
                 level: .warn
             )
             showDialog(
-                L.t(
-                    "JAVA_TOO_OLD",
-                    "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)",
-                    installation.versionStr
-                ),
+                L.t("JAVA_TOO_OLD", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", installation.versionStr),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
                 buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
                 isWarning: true
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    DebugLogger.log("User chose to download Java", level: .info)
                     MiscUtils.downloadJava()
-                } else {
-                    DebugLogger.log("User cancelled Java download", level: .info)
                 }
             }
             exit(1)
         } catch JavaSelectionError.userSpecifiedJavaVersionTooLow(_, let detected, _) {
-            DebugLogger.log(
-                "User-specified JAVA_HOME version \(detected) is lower than required (\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION))",
-                level: .warn
-            )
+            DebugLogger.log("Java \(detected) < required \(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", level: .warn)
             showDialog(
-                L.t(
-                    "JAVA_TOO_OLD",
-                    "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)",
-                    detected
-                ),
+                L.t("JAVA_TOO_OLD", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", detected),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
                 buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
                 isWarning: true
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    DebugLogger.log("User chose to download Java", level: .info)
                     MiscUtils.downloadJava()
-                } else {
-                    DebugLogger.log("User cancelled Java download", level: .info)
                 }
             }
             exit(1)
         } catch let error as JavaSelectionError {
             DebugLogger.log("Java selection error: \(error)", level: .error)
-            showDialog(
-                L.t("ERROR_OCCURRED", error.description),
-                isWarning: true
-            )
+            showDialog(L.t("ERROR_OCCURRED", error.description), isWarning: true)
             exit(1)
         } catch {
-            DebugLogger.log("Unknown error occurred: \(error)", level: .error)
+            DebugLogger.log("Unknown error: \(error)", level: .error)
             exit(1)
         }
-        DebugLogger.log("HMCLauncher main completed successfully", level: .info)
+    }
+
+    // MARK: - Launch HMCL
+    private static func launchHMCL(javaHome: String) throws {
+        let jarPath = AppPath.resolveJarPath(relativePath: LauncherEnv.HMCL_JAR_PATH, fileName: "HMCL.jar")
+
+        guard Files.exists(at: jarPath.path) else {
+            DebugLogger.log("HMCL JAR not found: \(jarPath.path)", level: .error)
+            showDialog(L.t("CANNOT_FIND_HMCL"), isWarning: true)
+            exit(1)
+        }
+
+        let javaExecutable = URL(fileURLWithPath: javaHome)
+            .appendingPathComponent("bin/java")
+
+        guard Files.isExecutable(javaExecutable.path) else {
+            DebugLogger.log("Java executable not found: \(javaExecutable.path)", level: .error)
+            exit(1)
+        }
+
+        var env = ProcessInfo.processInfo.environment
+        env["JAVA_HOME"] = javaHome
+
+        var arguments = LauncherEnv.JVM_ARGS
+        arguments.append("-jar")
+        arguments.append(jarPath.path)
+        arguments.append(contentsOf: LauncherEnv.ARGS.dropFirst())
+
+        DebugLogger.log("Starting HMCL with Java: \(javaExecutable.path)", level: .info)
+        DebugLogger.log("Arguments: \(arguments)", level: .debug)
+
+        let result = try ProcessRunner(executableURL: javaExecutable)
+            .withArguments(arguments)
+            .withEnvironment(env)
+            .run()
+
+        DebugLogger.log("HMCL exited with status: \(result.terminationStatus)", level: .info)
     }
 }

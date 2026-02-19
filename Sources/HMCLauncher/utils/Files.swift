@@ -48,11 +48,5 @@ public final class Files {
 
 // MARK: - URL Extensions
 public extension URL {
-    var parentDirectory: URL { deletingLastPathComponent() }
-    var fileExists: Bool { Files.exists(at: path) }
-    var isExecutable: Bool { Files.isExecutable(path) }
-
-    func appending(_ component: String, isDirectory: Bool = false) -> URL {
-        appendingPathComponent(component, isDirectory: isDirectory)
-    }
+    var parent: URL { deletingLastPathComponent() }
 }

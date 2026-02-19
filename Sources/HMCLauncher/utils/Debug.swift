@@ -48,7 +48,7 @@ public final class DebugLogger {
     }
 
     private static func append(_ data: Data, to url: URL) {
-        if url.fileExists,
+        if Files.exists(at: url.path),
             let handle = try? FileHandle(forWritingTo: url)
         {
             defer { try? handle.close() }
