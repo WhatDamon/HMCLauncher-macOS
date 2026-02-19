@@ -13,34 +13,27 @@ public struct JavaVersion: Comparable, CustomStringConvertible, Sendable {
     }
 
     public init?(from string: String) {
-        let parts =
-            string
+        let parts = string
             .replacingOccurrences(of: "_", with: ".")
             .replacingOccurrences(of: "-", with: ".")
             .split(separator: ".")
             .compactMap { Int($0) }
 
-        guard !parts.isEmpty else {
-            DebugLogger.log(
-                "Failed to parse JavaVersion from empty string: '\(string)'", level: .warn)
-            return nil
-        }
+        guard !parts.isEmpty else { return nil }
 
         if parts.first == 1, parts.count >= 2 {
             self.init(
-                major: parts[safe: 1] ?? 0,
-                minor: parts[safe: 2] ?? 0,
-                security: parts[safe: 3] ?? 0
+                major: parts.count > 1 ? parts[1] : 0,
+                minor: parts.count > 2 ? parts[2] : 0,
+                security: parts.count > 3 ? parts[3] : 0
             )
         } else {
             self.init(
-                major: parts[safe: 0] ?? 0,
-                minor: parts[safe: 1] ?? 0,
-                security: parts[safe: 2] ?? 0
+                major: parts[0],
+                minor: parts.count > 1 ? parts[1] : 0,
+                security: parts.count > 2 ? parts[2] : 0
             )
         }
-
-        DebugLogger.log("Parsed JavaVersion '\(self)' from string '\(string)'", level: .debug)
     }
 
     public static func < (l: Self, r: Self) -> Bool {
@@ -64,7 +57,7 @@ public struct JavaInstallation: Sendable {
     public let version: JavaVersion
 
     public var isArm64: Bool {
-        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64"
+        arch.trimmingCharacters(in: .whitespaces).lowercased() == "arm64"
     }
 
     public init?(dict: [String: Any]) {
@@ -76,10 +69,7 @@ public struct JavaInstallation: Sendable {
             let vendor = dict["JVMVendor"] as? String,
             let displayName = dict["JVMName"] as? String,
             let path = dict["JVMHomePath"] as? String
-        else {
-            DebugLogger.log("Skipping invalid JVM entry: \(dict)", level: .debug)
-            return nil
-        }
+        else { return nil }
 
         self.versionStr = versionStr
         self.version = version
@@ -87,82 +77,8 @@ public struct JavaInstallation: Sendable {
         self.vendor = vendor
         self.displayName = displayName
         self.path = path
-
-        DebugLogger.log(
-            "Discovered JavaInstallation: \(versionStr) (\(arch)) @ \(path)", level: .info)
-    }
-}
-
-// MARK: - Function: Get Java Home Data
-fileprivate func javaHomeXData() -> Data? {
-    do {
-        DebugLogger.log("Running /usr/libexec/java_home -X", level: .debug)
-        let result = try ProcessRunner.javaHome(arguments: ["-X"])
-        
-        guard result.isSuccess else {
-            DebugLogger.log(
-                "/usr/libexec/java_home terminated with \(result.terminationStatus)", level: .warn)
-            return nil
-        }
-        
-        DebugLogger.log("/usr/libexec/java_home returned \(result.outputData.count) bytes", level: .debug)
-        return result.outputData
-    } catch {
-        DebugLogger.log("Failed to run /usr/libexec/java_home: \(error)", level: .error)
-        return nil
-    }
-}
-
-// MARK: - Function: Public API
-public func findAllJavaInstallations() -> [JavaInstallation] {
-    guard
-        let data = javaHomeXData(),
-        let list = try? PropertyListSerialization.propertyList(
-            from: data,
-            options: [],
-            format: nil
-        ) as? [[String: Any]]
-    else {
-        DebugLogger.log("No Java installations found", level: .warn)
-        return []
     }
 
-    let installations = list.compactMap(JavaInstallation.init(dict:))
-    DebugLogger.log("Total Java installations found: \(installations.count)", level: .info)
-    return installations
-}
-
-// MARK: - Helpers
-extension Array where Element == JavaInstallation {
-    public func sortedByVersionDescending() -> [Element] {
-        let sorted = sorted { $0.version > $1.version }
-        DebugLogger.log("Sorted Java installations descending by version", level: .debug)
-        return sorted
-    }
-
-    public func filtered(byMinVersion v: JavaVersion) -> [Element] {
-        let filtered = filter { $0.version >= v }
-        DebugLogger.log(
-            "Filtered Java installations >= \(v): \(filtered.count) remaining", level: .debug)
-        return filtered
-    }
-
-    public func filtered(byArch a: String) -> [Element] {
-        let filtered = filter {
-            $0.arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == a.lowercased()
-        }
-        DebugLogger.log(
-            "Filtered Java installations by arch '\(a)': \(filtered.count) remaining", level: .debug
-        )
-        return filtered
-    }
-}
-
-extension Array {
-    fileprivate subscript(safe i: Index) -> Element? { indices.contains(i) ? self[i] : nil }
-}
-
-extension JavaInstallation {
     #if DEBUG
     public init(
         versionStr: String,
@@ -180,4 +96,36 @@ extension JavaInstallation {
         self.path = path
     }
     #endif
+}
+
+// MARK: - Java Installation Queries
+public extension Array where Element == JavaInstallation {
+    func sortedByVersionDescending() -> [Element] {
+        sorted { $0.version > $1.version }
+    }
+
+    func filtered(byMinVersion v: JavaVersion) -> [Element] {
+        self.filter { $0.version >= v }
+    }
+
+    func filtered(byArch a: String) -> [Element] {
+        let target = a.trimmingCharacters(in: .whitespaces).lowercased()
+        return self.filter { $0.arch.trimmingCharacters(in: .whitespaces).lowercased() == target }
+    }
+}
+
+// MARK: - Find All Java Installations
+public func findAllJavaInstallations() -> [JavaInstallation] {
+    guard let result = try? ProcessRunner.javaHome(arguments: ["-X"]),
+          result.isSuccess else {
+        return []
+    }
+    
+    let data = result.outputData
+    guard let list = try? PropertyListSerialization.propertyList(
+        from: data, options: [], format: nil
+    ) as? [[String: Any]] else {
+        return []
+    }
+    return list.compactMap(JavaInstallation.init(dict:))
 }

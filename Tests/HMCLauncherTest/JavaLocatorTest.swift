@@ -88,7 +88,7 @@ final class JavaLocatorTests: XCTestCase {
             XCTFail("Expected noArm64OnNewMacOS error")
         } catch let e as JavaSelectionError {
             XCTAssertTrue(
-                e.description.contains("Require ARM64 Java"),
+                e.description.contains("Require ARM64"),
                 "Unexpected error: \(e)"
             )
         } catch {

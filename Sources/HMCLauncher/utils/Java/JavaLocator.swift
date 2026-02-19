@@ -1,9 +1,9 @@
 import Foundation
 
 // MARK: - Hooks for testing
-@MainActor internal var _findAllJavaInstallations: () -> [JavaInstallation] = findAllJavaInstallations
-@MainActor internal var _currentArch: () -> String = SystemUtils.currentArch
-@MainActor internal var _getDarwinMajorVersion: () -> Int = SystemUtils.getDarwinMajorVersion
+@MainActor var _findAllJavaInstallations: () -> [JavaInstallation] = findAllJavaInstallations
+@MainActor var _currentArch: () -> String = SystemUtils.currentArch
+@MainActor var _getDarwinMajorVersion: () -> Int = SystemUtils.getDarwinMajorVersion
 
 // MARK: - Enum: JavaHome Source
 public enum JavaHomeSource: Sendable {
@@ -14,35 +14,41 @@ public enum JavaHomeSource: Sendable {
 // MARK: - Enum: Errors
 public enum JavaSelectionError: Error, CustomStringConvertible {
     case invalidJavaHome
-    case userSpecifiedJavaVersionTooLow(
-        path: String, detectedVersion: String, required: JavaVersion)
+    case userSpecifiedJavaVersionTooLow(path: String, detectedVersion: String, required: JavaVersion)
     case noJavaInstalled
     case newestTooLow(found: JavaInstallation, required: JavaVersion)
-    case noCompatibleJava(arch: String, minVer: JavaVersion, all: [JavaInstallation])
-    case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion, arm64List: [JavaInstallation])
+    case noCompatibleJava(arch: String, minVer: JavaVersion)
+    case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion)
 
     public var description: String {
         switch self {
-        case .invalidJavaHome:
-            return "Invalid JAVA_HOME."
-        case .userSpecifiedJavaVersionTooLow(_, let detectedVersion, let required):
-            return "Java \(detectedVersion) is lower than required \(required)."
-        case .noJavaInstalled:
-            return "No Java installation found."
+        case .invalidJavaHome: return "Invalid JAVA_HOME."
+        case .userSpecifiedJavaVersionTooLow(_, let detected, let required):
+            return "Java \(detected) < required \(required)."
+        case .noJavaInstalled: return "No Java installation found."
         case .newestTooLow(let found, let required):
-            return "Newest Java \(found.version) is lower than required \(required)."
-        case .noCompatibleJava(let arch, let minVer, _):
-            return "No Java \(minVer)+ found for \(arch)."
-        case .noArm64OnNewMacOS(_, let minVer, _):
-            return "Require ARM64 Java \(minVer)+ on macOS \(LauncherEnv.MACOS_VER)."
+            return "Java \(found.version) < required \(required)."
+        case .noCompatibleJava(let arch, let minVer):
+            return "No \(minVer)+ found for \(arch)."
+        case .noArm64OnNewMacOS(let darwin, let minVer):
+            return "Require ARM64 \(minVer)+ on macOS \(darwin)."
         }
     }
 }
 
-// MARK: - Function: Version Extraction
-fileprivate func extractJavaVersion(from output: String) -> String? {
-    let version =
-        output
+// MARK: - Validate Java at Path
+public func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) throws -> JavaHomeSource {
+    guard let java = AppPath.findJavaExecutable(base: basePath) else {
+        throw JavaSelectionError.invalidJavaHome
+    }
+
+    let result = try ProcessRunner(executableURL: URL(fileURLWithPath: java))
+        .withArguments(["-version"])
+        .run()
+
+    guard result.isSuccess else { throw JavaSelectionError.invalidJavaHome }
+
+    let versionString = result.error?
         .split(separator: "\n")
         .first { $0.contains("version") }?
         .split(separator: "\"")
@@ -50,161 +56,53 @@ fileprivate func extractJavaVersion(from output: String) -> String? {
         .first
         .map(String.init)
 
-    if let v = version {
-        DebugLogger.log("Extracted Java version string: \(v)", level: .debug)
-    } else {
-        DebugLogger.log("Failed to extract Java version from output", level: .warn)
-    }
-
-    return version
-}
-
-// MARK: - Function: JAVA_HOME Validation
-fileprivate func findJavaExecutable(in base: String) -> String? {
-    let exe = AppPath.findJavaExecutable(base: base)
-    if let exe {
-        DebugLogger.log("Found Java executable at \(exe)", level: .debug)
-    } else {
-        DebugLogger.log("No Java executable found in \(base)", level: .warn)
-    }
-    return exe
-}
-
-// MARK: - Function: Validate Java at Path
-public func validateJavaAtPath(
-    _ basePath: String,
-    minVersion: JavaVersion
-) throws -> JavaHomeSource {
-
-    DebugLogger.log("Validating JAVA_HOME at: \(basePath)", level: .info)
-
-    guard let java = findJavaExecutable(in: basePath) else {
-        DebugLogger.log("Validation failed: JAVA_HOME missing executable", level: .warn)
+    guard let verStr = versionString, let ver = JavaVersion(from: verStr) else {
         throw JavaSelectionError.invalidJavaHome
     }
 
-    let p = Process()
-    defer { p.terminate() } 
-    let pipe = Pipe()
-    p.executableURL = URL(fileURLWithPath: java)
-    p.arguments = ["-version"]
-    p.standardError = pipe
-
-    do {
-        DebugLogger.log("Running '\(java) -version'", level: .debug)
-        try p.run()
-        p.waitUntilExit()
-
-        guard p.terminationStatus == 0 else {
-            DebugLogger.log("Process terminated with status \(p.terminationStatus)", level: .warn)
-            throw JavaSelectionError.invalidJavaHome
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard
-            let out = String(data: data, encoding: .utf8),
-            let verStr = extractJavaVersion(from: out),
-            let ver = JavaVersion(from: verStr)
-        else {
-            DebugLogger.log("Failed to parse Java version from output", level: .warn)
-            throw JavaSelectionError.invalidJavaHome
-        }
-
-        DebugLogger.log("Detected Java version \(ver) at \(basePath)", level: .info)
-
-        guard ver >= minVersion else {
-            DebugLogger.log(
-                "Detected version \(ver) < required \(minVersion)", level: .warn
-            )
-            throw JavaSelectionError.userSpecifiedJavaVersionTooLow(
-                path: basePath,
-                detectedVersion: verStr,
-                required: minVersion
-            )
-        }
-
-        DebugLogger.log("JAVA_HOME validated successfully: \(basePath)", level: .info)
-        return .environment(path: basePath)
-
-    } catch let e as JavaSelectionError {
-        throw e
-    } catch {
-        DebugLogger.log("Error while validating JAVA_HOME: \(error)", level: .error)
-        throw JavaSelectionError.invalidJavaHome
+    guard ver >= minVersion else {
+        throw JavaSelectionError.userSpecifiedJavaVersionTooLow(
+            path: basePath, detectedVersion: verStr, required: minVersion
+        )
     }
+
+    return .environment(path: basePath)
 }
 
-// MARK: - Function: Java Selection
+// MARK: - Select Java Home
 @MainActor
 public func selectJavaHome(
-    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)") ?? JavaVersion(major: LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)
+    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)") 
+        ?? JavaVersion(major: LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)
 ) throws -> JavaHomeSource {
 
-    DebugLogger.log("Selecting JavaHome with minimum version \(minVersion)", level: .info)
-
-    if let path = LauncherEnv.ENV["HMCL_JAVA_HOME"],
-        !path.trimmingCharacters(in: .whitespaces).isEmpty
-    {
-        DebugLogger.log("HMCL_JAVA_HOME environment variable found: \(path)", level: .debug)
+    if let path = LauncherEnv.ENV["HMCL_JAVA_HOME"], !path.trimmingCharacters(in: .whitespaces).isEmpty {
         return try validateJavaAtPath(path, minVersion: minVersion)
     }
 
     let all = _findAllJavaInstallations()
-    DebugLogger.log("Found \(all.count) Java installations", level: .info)
-    guard !all.isEmpty else {
-        DebugLogger.log("No Java installations available", level: .warn)
-        throw JavaSelectionError.noJavaInstalled
-    }
-
-    guard let newest = all.sortedByVersionDescending().first,
-        newest.version >= minVersion
-    else {
-        DebugLogger.log(
-            "Newest Java version (\(all.first?.versionStr ?? "unknown")) < required \(minVersion)",
-            level: .warn
-        )
+    guard !all.isEmpty else { throw JavaSelectionError.noJavaInstalled }
+    guard let newest = all.sortedByVersionDescending().first, newest.version >= minVersion else {
         throw JavaSelectionError.newestTooLow(found: all.first!, required: minVersion)
     }
 
     let arch = _currentArch()
     let darwin = _getDarwinMajorVersion()
-    let allowX86 =
-        arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64" && darwin < 27
+    let allowX86 = arch == "arm64" && darwin < 27
 
     let candidates = all.filtered(byMinVersion: minVersion)
-    DebugLogger.log("Filtered \(candidates.count) candidates >= min version", level: .debug)
 
     if let native = candidates.filtered(byArch: arch).sortedByVersionDescending().first {
-        DebugLogger.log(
-            "Selected native Java (\(native.versionStr)) for arch \(arch)", level: .info)
         return .autoDetected(path: native.path)
     }
 
-    if allowX86,
-        let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending().first
-    {
-        DebugLogger.log(
-            "Falling back to x86_64 Java (\(x86.versionStr)) on arm64 macOS <28", level: .info)
+    if allowX86, let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending().first {
         return .autoDetected(path: x86.path)
     }
 
     if arch == "arm64" && !allowX86 {
-        let arm64List = candidates.filtered(byArch: "arm64")
-        DebugLogger.log(
-            "No arm64 Java available on macOS \(darwin), candidates: \(arm64List.map { $0.versionStr })",
-            level: .warn)
-        throw JavaSelectionError.noArm64OnNewMacOS(
-            darwin: darwin,
-            minVer: minVersion,
-            arm64List: arm64List
-        )
+        throw JavaSelectionError.noArm64OnNewMacOS(darwin: darwin, minVer: minVersion)
     }
 
-    DebugLogger.log(
-        "No compatible Java found for arch \(arch) with min version \(minVersion)", level: .warn)
-    throw JavaSelectionError.noCompatibleJava(
-        arch: arch,
-        minVer: minVersion,
-        all: all
-    )
+    throw JavaSelectionError.noCompatibleJava(arch: arch, minVer: minVersion)
 }
