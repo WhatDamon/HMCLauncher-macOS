@@ -2,9 +2,9 @@ import Foundation
 
 // MARK: - Main Entry Point
 @main
-struct HMCLauncher {
-    static func main() {
-        basicInfoOutput()
+public struct HMCLauncher {
+    public static func main() {
+        MiscUtils.basicInfoOutput()
 
         if LauncherEnv.DARWIN_VER < 19 {
             DebugLogger.log(
@@ -53,7 +53,7 @@ struct HMCLauncher {
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
                     DebugLogger.log("User chose to download Java", level: .info)
-                    downloadJava()
+                    MiscUtils.downloadJava()
                 } else {
                     DebugLogger.log("User cancelled Java download", level: .info)
                 }
@@ -76,7 +76,7 @@ struct HMCLauncher {
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
                     DebugLogger.log("User chose to download Java", level: .info)
-                    downloadJava()
+                    MiscUtils.downloadJava()
                 } else {
                     DebugLogger.log("User cancelled Java download", level: .info)
                 }

@@ -1,18 +1,18 @@
 import Foundation
 
 // MARK: - Hooks for testing
-@MainActor var _findAllJavaInstallations: () -> [JavaInstallation] = findAllJavaInstallations
-@MainActor var _currentArch: () -> String = currentArch
-@MainActor var _getDarwinMajorVersion: () -> Int = getDarwinMajorVersion
+@MainActor internal var _findAllJavaInstallations: () -> [JavaInstallation] = findAllJavaInstallations
+@MainActor internal var _currentArch: () -> String = SystemUtils.currentArch
+@MainActor internal var _getDarwinMajorVersion: () -> Int = SystemUtils.getDarwinMajorVersion
 
 // MARK: - Enum: JavaHome Source
-internal enum JavaHomeSource {
+public enum JavaHomeSource: Sendable {
     case environment(path: String)
     case autoDetected(path: String)
 }
 
 // MARK: - Enum: Errors
-internal enum JavaSelectionError: Error, CustomStringConvertible {
+public enum JavaSelectionError: Error, CustomStringConvertible {
     case invalidJavaHome
     case userSpecifiedJavaVersionTooLow(
         path: String, detectedVersion: String, required: JavaVersion)
@@ -21,7 +21,7 @@ internal enum JavaSelectionError: Error, CustomStringConvertible {
     case noCompatibleJava(arch: String, minVer: JavaVersion, all: [JavaInstallation])
     case noArm64OnNewMacOS(darwin: Int, minVer: JavaVersion, arm64List: [JavaInstallation])
 
-    var description: String {
+    public var description: String {
         switch self {
         case .invalidJavaHome:
             return "Invalid JAVA_HOME."
@@ -40,7 +40,7 @@ internal enum JavaSelectionError: Error, CustomStringConvertible {
 }
 
 // MARK: - Function: Version Extraction
-private func extractJavaVersion(from output: String) -> String? {
+fileprivate func extractJavaVersion(from output: String) -> String? {
     let version =
         output
         .split(separator: "\n")
@@ -60,7 +60,7 @@ private func extractJavaVersion(from output: String) -> String? {
 }
 
 // MARK: - Function: JAVA_HOME Validation
-private func findJavaExecutable(in base: String) -> String? {
+fileprivate func findJavaExecutable(in base: String) -> String? {
     let exe = AppPath.findJavaExecutable(base: base)
     if let exe {
         DebugLogger.log("Found Java executable at \(exe)", level: .debug)
@@ -71,7 +71,7 @@ private func findJavaExecutable(in base: String) -> String? {
 }
 
 // MARK: - Function: Validate Java at Path
-internal func validateJavaAtPath(
+public func validateJavaAtPath(
     _ basePath: String,
     minVersion: JavaVersion
 ) throws -> JavaHomeSource {
@@ -136,7 +136,7 @@ internal func validateJavaAtPath(
 
 // MARK: - Function: Java Selection
 @MainActor
-internal func selectJavaHome(
+public func selectJavaHome(
     minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)") ?? JavaVersion(major: LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)
 ) throws -> JavaHomeSource {
 

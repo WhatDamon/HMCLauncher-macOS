@@ -1,13 +1,15 @@
 import Foundation
 
-public enum AppPath {
-    // MARK: - Function: Current working directory as URL
-    internal static var workingDirectory: URL {
+public final class AppPath {
+    private init() {}
+
+    // MARK: - Current working directory as URL
+    public static var workingDirectory: URL {
         URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     }
 
-    // MARK: - Function: Returns cwd, parent, grandparent, etc
-    internal static func workingDirectoryChain(depth: Int = 2) -> [URL] {
+    // MARK: - Returns cwd, parent, grandparent, etc
+    public static func workingDirectoryChain(depth: Int = 2) -> [URL] {
         var urls: [URL] = [workingDirectory]
         var current = workingDirectory
 
@@ -18,8 +20,8 @@ public enum AppPath {
         return urls
     }
 
-    // MARK: - Function: Locate a Java executable under a base directory
-    internal static func findJavaExecutable(base: String) -> String? {
+    // MARK: - Locate a Java executable under a base directory
+    public static func findJavaExecutable(base: String) -> String? {
         let fm = FileManager.default
         let candidates = [
             "bin/java",
@@ -30,14 +32,14 @@ public enum AppPath {
         return candidates.first { fm.isExecutableFile(atPath: $0) }
     }
 
-    // MARK: - Function: Get absolute path to the running executable
-    internal static func executableURL() -> URL {
+    // MARK: - Get absolute path to the running executable
+    public static func executableURL() -> URL {
         URL(fileURLWithPath: CommandLine.arguments[0])
             .standardizedFileURL
     }
 
-    // MARK: - Function: Check Path to the enclosing .app bundle
-    internal static func appBundleURL() -> URL? {
+    // MARK: - Check Path to the enclosing .app bundle
+    public static func appBundleURL() -> URL? {
         var url = executableURL()
 
         while url.pathComponents.count > 1 {
@@ -49,8 +51,8 @@ public enum AppPath {
         return nil
     }
 
-    // MARK: - Function: Is inside a valid macOS App Bundle
-    internal static func isRunningInsideAppBundle() -> Bool {
+    // MARK: - Is inside a valid macOS App Bundle
+    public static func isRunningInsideAppBundle() -> Bool {
         guard let bundleURL = appBundleURL() else { return false }
 
         let contents = bundleURL.appendingPathComponent("Contents", isDirectory: true)
@@ -63,8 +65,8 @@ public enum AppPath {
             && fm.fileExists(atPath: infoPlist.path)
     }
 
-    // MARK: - Function: Get ~/Library/Application Support
-    internal static func applicationSupportDirectory() throws -> URL {
+    // MARK: - Get ~/Library/Application Support
+    public static func applicationSupportDirectory() throws -> URL {
         try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -73,8 +75,8 @@ public enum AppPath {
         )
     }
 
-    // MARK: - Function: Get log directory
-    internal static func logsDirectory() throws -> URL {
+    // MARK: - Get log directory
+    public static func logsDirectory() throws -> URL {
         let dir = try applicationSupportDirectory()
             .appendingPathComponent("hmcl", isDirectory: true)
             .appendingPathComponent("hmclauncher-logs", isDirectory: true)
@@ -87,8 +89,8 @@ public enum AppPath {
         return dir
     }
 
-    // MARK: - Function: Log file URL
-    internal static func newLogFileURL(
+    // MARK: - Log file URL
+    public static func newLogFileURL(
         prefix: String = "HMCLauncher-macOS"
     ) throws -> URL {
 

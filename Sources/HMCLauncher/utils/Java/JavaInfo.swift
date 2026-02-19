@@ -1,18 +1,18 @@
 import Foundation
 
 // MARK: - Struct: JavaVersion
-internal struct JavaVersion: Comparable, CustomStringConvertible {
-    let major: Int
-    let minor: Int
-    let security: Int
+public struct JavaVersion: Comparable, CustomStringConvertible, Sendable {
+    public let major: Int
+    public let minor: Int
+    public let security: Int
 
-    init(major: Int, minor: Int = 0, security: Int = 0) {
+    public init(major: Int, minor: Int = 0, security: Int = 0) {
         self.major = major
         self.minor = minor
         self.security = security
     }
 
-    init?(from string: String) {
+    public init?(from string: String) {
         let parts =
             string
             .replacingOccurrences(of: "_", with: ".")
@@ -43,11 +43,11 @@ internal struct JavaVersion: Comparable, CustomStringConvertible {
         DebugLogger.log("Parsed JavaVersion '\(self)' from string '\(string)'", level: .debug)
     }
 
-    static func < (l: Self, r: Self) -> Bool {
+    public static func < (l: Self, r: Self) -> Bool {
         (l.major, l.minor, l.security) < (r.major, r.minor, r.security)
     }
 
-    var description: String {
+    public var description: String {
         major < 9
             ? "1.\(major).\(minor)_\(security)"
             : "\(major).\(minor).\(security)"
@@ -55,15 +55,19 @@ internal struct JavaVersion: Comparable, CustomStringConvertible {
 }
 
 // MARK: - Struct: JavaInstallation
-internal struct JavaInstallation {
-    let versionStr, arch, vendor, displayName, path: String
-    let version: JavaVersion
+public struct JavaInstallation: Sendable {
+    public let versionStr: String
+    public let arch: String
+    public let vendor: String
+    public let displayName: String
+    public let path: String
+    public let version: JavaVersion
 
-    var isArm64: Bool {
+    public var isArm64: Bool {
         arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == "arm64"
     }
 
-    init?(dict: [String: Any]) {
+    public init?(dict: [String: Any]) {
         guard
             (dict["JVMEnabled"] as? Bool) != false,
             let versionStr = dict["JVMVersion"] as? String,
@@ -90,7 +94,7 @@ internal struct JavaInstallation {
 }
 
 // MARK: - Function: Get Java Home Data
-private func javaHomeXData() -> Data? {
+fileprivate func javaHomeXData() -> Data? {
     let p = Process()
     defer { p.terminate() } 
     p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
@@ -119,7 +123,7 @@ private func javaHomeXData() -> Data? {
 }
 
 // MARK: - Function: Public API
-internal func findAllJavaInstallations() -> [JavaInstallation] {
+public func findAllJavaInstallations() -> [JavaInstallation] {
     guard
         let data = javaHomeXData(),
         let list = try? PropertyListSerialization.propertyList(
@@ -139,20 +143,20 @@ internal func findAllJavaInstallations() -> [JavaInstallation] {
 
 // MARK: - Helpers
 extension Array where Element == JavaInstallation {
-    func sortedByVersionDescending() -> [Element] {
+    public func sortedByVersionDescending() -> [Element] {
         let sorted = sorted { $0.version > $1.version }
         DebugLogger.log("Sorted Java installations descending by version", level: .debug)
         return sorted
     }
 
-    func filtered(byMinVersion v: JavaVersion) -> [Element] {
+    public func filtered(byMinVersion v: JavaVersion) -> [Element] {
         let filtered = filter { $0.version >= v }
         DebugLogger.log(
             "Filtered Java installations >= \(v): \(filtered.count) remaining", level: .debug)
         return filtered
     }
 
-    func filtered(byArch a: String) -> [Element] {
+    public func filtered(byArch a: String) -> [Element] {
         let filtered = filter {
             $0.arch.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) == a.lowercased()
         }
@@ -169,7 +173,7 @@ extension Array {
 
 extension JavaInstallation {
     #if DEBUG
-    init(
+    public init(
         versionStr: String,
         version: JavaVersion,
         arch: String,

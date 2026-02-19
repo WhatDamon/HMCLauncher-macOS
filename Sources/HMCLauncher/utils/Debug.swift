@@ -1,16 +1,16 @@
 import Foundation
 
-// MARK: - Function: Debug Logger
-public struct DebugLogger {
-    enum Level: String {
+// MARK: - Debug Logger
+public final class DebugLogger {
+    public enum Level: String {
         case debug = "DEBUG"
         case info = "INFO"
         case warn = "WARN"
         case error = "ERROR"
     }
 
-    static var isDebug: Bool { LauncherEnv.IS_DEBUG }
-    static let logURL: URL? = LauncherEnv.logURL
+    public static var isDebug: Bool { LauncherEnv.IS_DEBUG }
+    public static let logURL: URL? = LauncherEnv.logURL
 
     private static let formatter: DateFormatter = {
         let f = DateFormatter()
@@ -20,7 +20,7 @@ public struct DebugLogger {
 
     private static let fileWriteLock = NSLock()
 
-    static func log(
+    public static func log(
         _ message: String,
         level: Level = .debug,
         file: String = #fileID,
