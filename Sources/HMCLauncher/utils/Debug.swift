@@ -18,6 +18,8 @@ public struct DebugLogger {
         return f
     }()
 
+    private static let fileWriteLock = NSLock()
+
     static func log(
         _ message: String,
         level: Level = .debug,
@@ -39,6 +41,8 @@ public struct DebugLogger {
             let url = logURL,
             let data = (lineText + "\n").data(using: .utf8)
         {
+            fileWriteLock.lock()
+            defer { fileWriteLock.unlock() }
             append(data, to: url)
         }
     }
