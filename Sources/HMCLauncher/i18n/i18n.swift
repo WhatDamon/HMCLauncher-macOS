@@ -28,7 +28,7 @@ public enum L {
             "DOWNLOAD_JAVA_BUTTON": "Download a Supported Version",
             "CANNOT_OPEN_JAVA_DOWNLOAD":
                 "Unable to open webpage.\nPlease visit %@ manually to download Java.",
-            "CANNOT_FIND_HMCL": "HMCL not found, unable to run",
+            "CANNOT_FIND_HMCL": "HMCL not found, unable to run"
         ],
         .zhHans: [
             "ERROR_TITLE": "错误",
@@ -41,8 +41,8 @@ public enum L {
             "JAVA_NOT_SUPPORTED_TITLE": "Java 版本不受支持",
             "DOWNLOAD_JAVA_BUTTON": "下载受支持的版本",
             "CANNOT_OPEN_JAVA_DOWNLOAD": "无法打开网页,\n请手动访问 %@ 下载Java",
-            "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行",
-        ],
+            "CANNOT_FIND_HMCL": "找不到 HMCL, 无法运行"
+        ]
     ]
 
     // MARK: - Public API

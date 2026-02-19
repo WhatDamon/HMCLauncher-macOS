@@ -25,7 +25,7 @@ public final class AppPath {
         let candidates = [
             "bin/java",
             "Contents/Home/bin/java",
-            "Home/bin/java",
+            "Home/bin/java"
         ].map { (base as NSString).appendingPathComponent($0) }
 
         return candidates.first { Files.isExecutable($0) }

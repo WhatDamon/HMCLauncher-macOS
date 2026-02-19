@@ -15,7 +15,7 @@ let package = Package(
                 .unsafeFlags(
                     [
                         "-Osize",
-                        "-whole-module-optimization",
+                        "-whole-module-optimization"
                     ],
                     .when(configuration: .release)
                 )
@@ -24,6 +24,6 @@ let package = Package(
         .testTarget(
             name: "HMCLauncherTests",
             dependencies: ["HMCLauncher"]
-        ),
+        )
     ]
 )
