@@ -48,15 +48,14 @@ public final class DebugLogger {
     }
 
     private static func append(_ data: Data, to url: URL) {
-        let fm = FileManager.default
-        if fm.fileExists(atPath: url.path),
+        if url.fileExists,
             let handle = try? FileHandle(forWritingTo: url)
         {
             defer { try? handle.close() }
             handle.seekToEndOfFile()
             handle.write(data)
         } else {
-            try? data.write(to: url, options: .atomic)
+            try? Files.writeData(data, to: url, atomically: true)
         }
     }
 }

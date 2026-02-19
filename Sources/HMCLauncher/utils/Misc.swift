@@ -29,13 +29,8 @@ public final class MiscUtils {
             ? LauncherEnv.urlJavaDownloadLinkArm64
             : LauncherEnv.urlJavaDownloadLinkX86_64
 
-        let process = Process()
-        defer { process.terminate() } 
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        process.arguments = [url]
-
         do {
-            try process.run()
+            try ProcessRunner.openURL(url)
         } catch {
             DebugLogger.log("Failed to open Java download link: \(error)", level: .error)
             showDialog(L.t("CANNOT_OPEN_JAVA_DOWNLOAD", "\(url)"), isWarning: true)

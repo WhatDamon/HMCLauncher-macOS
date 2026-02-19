@@ -95,27 +95,18 @@ public struct JavaInstallation: Sendable {
 
 // MARK: - Function: Get Java Home Data
 fileprivate func javaHomeXData() -> Data? {
-    let p = Process()
-    defer { p.terminate() } 
-    p.executableURL = URL(fileURLWithPath: "/usr/libexec/java_home")
-    p.arguments = ["-X"]
-
-    let pipe = Pipe()
-    p.standardOutput = pipe
-
     do {
         DebugLogger.log("Running /usr/libexec/java_home -X", level: .debug)
-        try p.run()
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 else {
+        let result = try ProcessRunner.javaHome(arguments: ["-X"])
+        
+        guard result.isSuccess else {
             DebugLogger.log(
-                "/usr/libexec/java_home terminated with \(p.terminationStatus)", level: .warn)
+                "/usr/libexec/java_home terminated with \(result.terminationStatus)", level: .warn)
             return nil
         }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        DebugLogger.log("/usr/libexec/java_home returned \(data.count) bytes", level: .debug)
-        return data
+        
+        DebugLogger.log("/usr/libexec/java_home returned \(result.outputData.count) bytes", level: .debug)
+        return result.outputData
     } catch {
         DebugLogger.log("Failed to run /usr/libexec/java_home: \(error)", level: .error)
         return nil

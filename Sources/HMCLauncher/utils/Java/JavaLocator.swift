@@ -184,7 +184,7 @@ public func selectJavaHome(
         let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending().first
     {
         DebugLogger.log(
-            "Falling back to x86_64 Java (\(x86.versionStr)) on arm64 macOS <26", level: .info)
+            "Falling back to x86_64 Java (\(x86.versionStr)) on arm64 macOS <28", level: .info)
         return .autoDetected(path: x86.path)
     }
 

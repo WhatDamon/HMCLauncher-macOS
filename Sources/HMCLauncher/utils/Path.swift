@@ -5,7 +5,7 @@ public final class AppPath {
 
     // MARK: - Current working directory as URL
     public static var workingDirectory: URL {
-        URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        Files.currentDirectory
     }
 
     // MARK: - Returns cwd, parent, grandparent, etc
@@ -14,7 +14,7 @@ public final class AppPath {
         var current = workingDirectory
 
         for _ in 0..<depth {
-            current = current.deletingLastPathComponent()
+            current = current.parentDirectory
             urls.append(current)
         }
         return urls
@@ -22,14 +22,13 @@ public final class AppPath {
 
     // MARK: - Locate a Java executable under a base directory
     public static func findJavaExecutable(base: String) -> String? {
-        let fm = FileManager.default
         let candidates = [
             "bin/java",
             "Contents/Home/bin/java",
             "Home/bin/java",
         ].map { (base as NSString).appendingPathComponent($0) }
 
-        return candidates.first { fm.isExecutableFile(atPath: $0) }
+        return candidates.first { Files.isExecutable($0) }
     }
 
     // MARK: - Get absolute path to the running executable
@@ -55,36 +54,25 @@ public final class AppPath {
     public static func isRunningInsideAppBundle() -> Bool {
         guard let bundleURL = appBundleURL() else { return false }
 
-        let contents = bundleURL.appendingPathComponent("Contents", isDirectory: true)
-        let macOS = contents.appendingPathComponent("MacOS", isDirectory: true)
-        let infoPlist = contents.appendingPathComponent("Info.plist", isDirectory: false)
+        let contents = bundleURL.appending("Contents", isDirectory: true)
+        let macOS = contents.appending("MacOS", isDirectory: true)
+        let infoPlist = contents.appending("Info.plist", isDirectory: false)
 
-        let fm = FileManager.default
-        return
-            fm.fileExists(atPath: contents.path) && fm.fileExists(atPath: macOS.path)
-            && fm.fileExists(atPath: infoPlist.path)
+        return contents.fileExists && macOS.fileExists && infoPlist.fileExists
     }
 
     // MARK: - Get ~/Library/Application Support
     public static func applicationSupportDirectory() throws -> URL {
-        try FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
+        try Files.applicationSupport()
     }
 
     // MARK: - Get log directory
     public static func logsDirectory() throws -> URL {
         let dir = try applicationSupportDirectory()
-            .appendingPathComponent("hmcl", isDirectory: true)
-            .appendingPathComponent("hmclauncher-logs", isDirectory: true)
+            .appending("hmcl", isDirectory: true)
+            .appending("hmclauncher-logs", isDirectory: true)
 
-        try FileManager.default.createDirectory(
-            at: dir,
-            withIntermediateDirectories: true
-        )
+        try Files.createDirectory(at: dir)
 
         return dir
     }
@@ -102,6 +90,6 @@ public final class AppPath {
         let filename = "\(formatter.string(from: Date())) \(prefix).log"
 
         return try logsDirectory()
-            .appendingPathComponent(filename, isDirectory: false)
+            .appending(filename, isDirectory: false)
     }
 }

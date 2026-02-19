@@ -31,23 +31,11 @@ public func showDialog(
         : [AppPath.workingDirectory]
 
     for dir in dirs {
-        let process = Process()
-        defer { process.terminate() } 
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-e", script]
-        process.currentDirectoryURL = dir
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
         do {
-            try process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-                !output.isEmpty
-            {
+            let output = try ProcessRunner.runAppleScript(script, directory: dir)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if !output.isEmpty {
                 print("Button pressed: \(output) (executed in \(dir.path))")
                 onButtonPressed?(output)
             }
