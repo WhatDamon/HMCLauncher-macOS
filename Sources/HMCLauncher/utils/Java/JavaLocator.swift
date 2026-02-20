@@ -38,7 +38,7 @@ public enum JavaSelectionError: Error, CustomStringConvertible {
 
 // MARK: - Validate Java at Path
 public func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) throws -> JavaHomeSource {
-    guard let java = AppPath.findJavaExecutable(base: basePath) else {
+    guard let java = PathUtils.findJavaExecutable(base: basePath) else {
         throw JavaSelectionError.invalidJavaHome
     }
 

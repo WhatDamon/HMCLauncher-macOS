@@ -2,6 +2,8 @@ import Foundation
 
 // MARK: - JVM Argument Parser
 public final class JVMArgsParser {
+    private init() {}
+
     // MARK: - Shell Argument Parser
     private static func parseShellArgs(_ input: String) -> [String] {
         var args: [String] = []

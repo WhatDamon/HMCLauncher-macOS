@@ -6,25 +6,25 @@ import XCTest
 final class PathTests: XCTestCase {
     // MARK: - Path Tests
     func testWorkingDirectory() throws {
-        let wd = AppPath.workingDirectory
+        let wd = PathUtils.workingDirectory
         XCTAssertTrue(FileManager.default.fileExists(atPath: wd.path))
     }
 
     func testWorkingDirectoryChain() throws {
-        let chain = AppPath.workingDirectoryChain(depth: 3)
+        let chain = PathUtils.workingDirectoryChain(depth: 3)
         XCTAssertGreaterThanOrEqual(chain.count, 4)
-        XCTAssertEqual(chain.first, AppPath.workingDirectory)
-        XCTAssertEqual(chain[1], AppPath.workingDirectory.deletingLastPathComponent())
+        XCTAssertEqual(chain.first, PathUtils.workingDirectory)
+        XCTAssertEqual(chain[1], PathUtils.workingDirectory.deletingLastPathComponent())
     }
 
     func testExecutableURL() throws {
-        let exeURL = AppPath.executableURL()
+        let exeURL = PathUtils.executableURL()
         XCTAssertTrue(
             exeURL.path.hasSuffix(CommandLine.arguments[0].components(separatedBy: "/").last ?? ""))
     }
 
     func testAppBundleDetection() throws {
-        let bundleURL = AppPath.appBundleURL()
+        let bundleURL = PathUtils.appBundleURL()
         if let url = bundleURL {
             XCTAssertEqual(url.pathExtension, "app")
         } else {
@@ -33,22 +33,22 @@ final class PathTests: XCTestCase {
     }
 
     func testIsRunningInsideAppBundle() throws {
-        _ = AppPath.isRunningInsideAppBundle()
+        _ = PathUtils.isRunningInsideAppBundle()
     }
 
     func testApplicationSupportDirectory() throws {
-        let appSupport = try AppPath.applicationSupportDirectory()
+        let appSupport = try PathUtils.applicationSupportDirectory()
         XCTAssertTrue(FileManager.default.fileExists(atPath: appSupport.path))
     }
 
     func testLogsDirectoryCreation() throws {
-        let logsDir = try AppPath.logsDirectory()
+        let logsDir = try PathUtils.logsDirectory()
         XCTAssertTrue(FileManager.default.fileExists(atPath: logsDir.path))
         XCTAssertTrue(logsDir.lastPathComponent == "hmclauncher-logs")
     }
 
     func testNewLogFileURL() throws {
-        let logFile = try AppPath.newLogFileURL()
+        let logFile = try PathUtils.newLogFileURL()
         XCTAssertTrue(logFile.path.hasSuffix(".log"))
         XCTAssertTrue(logFile.path.contains("hmcl"))
         XCTAssertTrue(logFile.lastPathComponent.contains("HMCLauncher-macOS"))
@@ -59,7 +59,7 @@ final class PathTests: XCTestCase {
     }
 
     func testFindJavaExecutableReturnsNilForInvalidBase() throws {
-        let result = AppPath.findJavaExecutable(base: "/invalid/path")
+        let result = PathUtils.findJavaExecutable(base: "/invalid/path")
         XCTAssertNil(result)
     }
 
@@ -73,7 +73,7 @@ final class PathTests: XCTestCase {
         FileManager.default.createFile(
             atPath: javaFile.path, contents: Data(), attributes: [.posixPermissions: 0o755])
 
-        let found = AppPath.findJavaExecutable(base: tempDir.path)
+        let found = PathUtils.findJavaExecutable(base: tempDir.path)
         XCTAssertEqual(found, javaFile.path)
     }
 }

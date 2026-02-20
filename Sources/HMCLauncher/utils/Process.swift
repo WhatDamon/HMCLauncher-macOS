@@ -110,7 +110,7 @@ public extension ProcessRunner {
         let javaExec = URL(fileURLWithPath: javaHome)
             .appendingPathComponent("bin/java")
 
-        guard Files.isExecutable(javaExec.path) else {
+        guard FileUtils.isExecutable(javaExec.path) else {
             throw ProcessError("Java executable not found: \(javaExec.path)")
         }
 

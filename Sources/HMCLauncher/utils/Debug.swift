@@ -2,6 +2,8 @@ import Foundation
 
 // MARK: - Debug Logger
 public final class DebugLogger {
+    private init() {}
+
     public enum Level: String {
         case debug = "DEBUG"
         case info = "INFO"
@@ -48,14 +50,14 @@ public final class DebugLogger {
     }
 
     private static func append(_ data: Data, to url: URL) {
-        if Files.exists(at: url.path),
+        if FileUtils.exists(at: url.path),
             let handle = try? FileHandle(forWritingTo: url)
         {
             defer { try? handle.close() }
             handle.seekToEndOfFile()
             handle.write(data)
         } else {
-            try? Files.writeData(data, to: url, atomically: true)
+            try? FileUtils.writeData(data, to: url, atomically: true)
         }
     }
 }

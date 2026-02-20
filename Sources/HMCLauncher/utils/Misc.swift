@@ -2,6 +2,8 @@ import Foundation
 
 // MARK: - Miscellaneous Utilities
 public final class MiscUtils {
+    private init() {}
+
     // MARK: - Basic Information Output
     public static func basicInfoOutput() {
         DebugLogger.log("*** HMCL Launcher for macOS \(LauncherEnv.LAUNCHER_VER) ***", level: .info)
@@ -18,8 +20,8 @@ public final class MiscUtils {
             DebugLogger.log("- JVM Options: Null", level: .info)
         }
 
-        DebugLogger.log("- Current working directory: \(AppPath.workingDirectory.path)", level: .info)
-        DebugLogger.log("- Executable path: \(AppPath.executableURL().path)", level: .info)
+        DebugLogger.log("- Current working directory: \(PathUtils.workingDirectory.path)", level: .info)
+        DebugLogger.log("- Executable path: \(PathUtils.executableURL().path)", level: .info)
     }
 
     // MARK: - Open Java Download Page

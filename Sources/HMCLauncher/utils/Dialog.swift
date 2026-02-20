@@ -27,8 +27,8 @@ public func showDialog(
 
     let dirs: [URL] =
         LauncherEnv.IS_INSIDE_APP_BUNDLE
-        ? AppPath.workingDirectoryChain(depth: 2)
-        : [AppPath.workingDirectory]
+        ? PathUtils.workingDirectoryChain(depth: 2)
+        : [PathUtils.workingDirectory]
 
     for dir in dirs {
         do {

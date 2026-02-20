@@ -18,7 +18,7 @@ public struct LauncherEnv {
     public static let ARGS = CommandLine.arguments
 
     // Platform Information
-    public static let IS_INSIDE_APP_BUNDLE = AppPath.isRunningInsideAppBundle()
+    public static let IS_INSIDE_APP_BUNDLE = PathUtils.isRunningInsideAppBundle()
     public static let DARWIN_VER = SystemUtils.getDarwinMajorVersion()
     public static let MACOS_VER = SystemUtils.macOSVersionString(fromDarwin: DARWIN_VER)
 
@@ -52,6 +52,6 @@ public struct LauncherEnv {
     // Logging
     public static let logURL: URL? = {
         guard IS_DEBUG else { return nil }
-        return try? AppPath.newLogFileURL()
+        return try? PathUtils.newLogFileURL()
     }()
 }

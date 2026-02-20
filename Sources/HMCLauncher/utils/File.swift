@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - File Utilities
-public final class Files {
+public final class FileUtils {
     private nonisolated(unsafe) static let fileManager: FileManager = .default
 
     private init() {}

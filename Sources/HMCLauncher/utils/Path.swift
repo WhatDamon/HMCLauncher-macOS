@@ -1,9 +1,9 @@
 import Foundation
 
-public final class AppPath {
+public final class PathUtils {
     private init() {}
 
-    public static var workingDirectory: URL { Files.currentDirectory }
+    public static var workingDirectory: URL { FileUtils.currentDirectory }
 
     public static func workingDirectoryChain(depth: Int = 2) -> [URL] {
         var urls: [URL] = [workingDirectory]
@@ -23,7 +23,7 @@ public final class AppPath {
             "Home/bin/java"
         ].map { (base as NSString).appendingPathComponent($0) }
 
-        return candidates.first { Files.isExecutable($0) }
+        return candidates.first { FileUtils.isExecutable($0) }
     }
 
     public static func executableURL() -> URL {
@@ -47,13 +47,13 @@ public final class AppPath {
         let macOS = contents.appendingPathComponent("MacOS", isDirectory: true)
         let infoPlist = contents.appendingPathComponent("Info.plist", isDirectory: false)
 
-        return Files.exists(at: contents.path) &&
-               Files.exists(at: macOS.path) &&
-               Files.exists(at: infoPlist.path)
+        return FileUtils.exists(at: contents.path) &&
+               FileUtils.exists(at: macOS.path) &&
+               FileUtils.exists(at: infoPlist.path)
     }
 
     public static func applicationSupportDirectory() throws -> URL {
-        try Files.applicationSupport()
+        try FileUtils.applicationSupport()
     }
 
     public static func logsDirectory() throws -> URL {
@@ -61,7 +61,7 @@ public final class AppPath {
             .appendingPathComponent("hmcl", isDirectory: true)
             .appendingPathComponent("hmclauncher-logs", isDirectory: true)
 
-        try Files.createDirectory(at: dir)
+        try FileUtils.createDirectory(at: dir)
 
         return dir
     }
@@ -81,12 +81,12 @@ public final class AppPath {
     public static func resolveJarPath(relativePath: String, fileName: String) -> URL {
         let execDir = executableURL().deletingLastPathComponent()
         let execJar = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
-        if Files.exists(at: execJar.path) {
+        if FileUtils.exists(at: execJar.path) {
             return execJar
         }
 
         let workingJar = workingDirectory.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
-        if Files.exists(at: workingJar.path) {
+        if FileUtils.exists(at: workingJar.path) {
             return workingJar
         }
 

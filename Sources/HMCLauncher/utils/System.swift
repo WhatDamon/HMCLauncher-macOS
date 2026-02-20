@@ -2,6 +2,8 @@ import Foundation
 
 // MARK: - System Utilities
 public final class SystemUtils {
+    private init() {}
+
     // MARK: - Get the device current CPU architecture
     public static func currentArch() -> String {
         #if arch(arm64)
