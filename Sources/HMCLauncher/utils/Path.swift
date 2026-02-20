@@ -79,30 +79,17 @@ public final class AppPath {
 
     // MARK: - Resolve JAR Path
     public static func resolveJarPath(relativePath: String, fileName: String) -> URL {
-        if relativePath.hasPrefix("/") {
-            return URL(fileURLWithPath: relativePath).appendingPathComponent(fileName)
-        }
-
-        if let bundlePath = appBundleURL() {
-            let jarInBundle = bundlePath
-                .appendingPathComponent("Contents/Resources", isDirectory: true)
-                .appendingPathComponent(fileName)
-            if Files.exists(at: jarInBundle.path) {
-                return jarInBundle
-            }
-        }
-
         let execDir = executableURL().deletingLastPathComponent()
-        let relativeToExec = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName)
-        if Files.exists(at: relativeToExec.path) {
-            return relativeToExec
+        let execJar = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
+        if Files.exists(at: execJar.path) {
+            return execJar
         }
 
-        let workingDir = workingDirectory.appendingPathComponent(relativePath).appendingPathComponent(fileName)
-        if Files.exists(at: workingDir.path) {
-            return workingDir
+        let workingJar = workingDirectory.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
+        if Files.exists(at: workingJar.path) {
+            return workingJar
         }
 
-        return URL(fileURLWithPath: relativePath).appendingPathComponent(fileName)
+        return workingJar
     }
 }

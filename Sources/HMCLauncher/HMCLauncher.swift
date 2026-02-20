@@ -77,7 +77,7 @@ public struct HMCLauncher {
             javaHome = path
         }
 
-        let jarPath = AppPath.resolveJarPath(relativePath: LauncherEnv.HMCL_JAR_PATH, fileName: "HMCL.jar")
+        let jarPath = AppPath.resolveJarPath(relativePath: LauncherEnv.HMCL_JAR_PATH, fileName: LauncherEnv.HMCL_JAR_NAME)
 
         guard Files.exists(at: jarPath.path) else {
             DebugLogger.log("JAR not found: \(jarPath.path)", level: .error)
@@ -89,7 +89,7 @@ public struct HMCLauncher {
             jarPath: jarPath,
             javaHome: javaHome,
             jvmArgs: LauncherEnv.JVM_ARGS,
-            appArgs: Array(LauncherEnv.ARGS.dropFirst())
+            appArgs: []
         )
 
         DebugLogger.log("HMCL exited with status: \(result.terminationStatus)", level: .info)

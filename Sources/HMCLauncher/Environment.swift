@@ -6,7 +6,8 @@ public struct LauncherEnv {
 
     public static let LAUNCHER_VER = "3.8.0"
     public static let HMCL_EXPECTED_JAVA_MAJOR_VERSION = 17
-    public static let HMCL_JAR_PATH = "../Resources/HMCL.jar"
+    public static let HMCL_JAR_PATH = "../Resources"
+    public static let HMCL_JAR_NAME = "HMCL.jar"
 
     public static let urlHMCLGithubPage = "https://github.com/HMCL-dev/HMCL"
     public static let urlJavaDownloadLinkArm64 = "https://docs.hmcl.net/downloads/macos/arm64.html"
