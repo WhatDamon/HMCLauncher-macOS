@@ -36,11 +36,11 @@ public func showDialog(
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
             if !output.isEmpty {
-                print("Button pressed: \(output) (executed in \(dir.path))")
+                DebugLogger.log("Button pressed: \(output) (executed in \(dir.path))", level: .debug)
                 onButtonPressed?(output)
             }
         } catch {
-            print("Failed to show dialog in \(dir.path): \(error)")
+            DebugLogger.log("Failed to show dialog in \(dir.path): \(error)", level: .error)
         }
     }
 }
