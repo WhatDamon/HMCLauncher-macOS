@@ -76,7 +76,8 @@ build_arch() {
   step "Building $arch slice..."
   swift build -c release --arch "$arch" --build-path ".build/$arch" \
     -Xswiftc -Osize \
-    -Xswiftc -whole-module-optimization
+    -Xswiftc -whole-module-optimization \
+    -Xlinker -dead_strip
   ok "$arch build complete!"
 }
 
