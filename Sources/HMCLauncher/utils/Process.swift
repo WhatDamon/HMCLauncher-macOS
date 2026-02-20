@@ -1,5 +1,15 @@
 import Foundation
 
+public struct ProcessError: Error, CustomStringConvertible {
+    public let message: String
+
+    public init(_ message: String) {
+        self.message = message
+    }
+
+    public var description: String { message }
+}
+
 public struct ProcessResult: Sendable {
     public let terminationStatus: Int32
     public let outputData: Data
@@ -87,5 +97,34 @@ public extension ProcessRunner {
             .withArguments(["-e", script])
         if let dir = directory { runner.inDirectory(dir) }
         return try runner.runOutput()
+    }
+
+    // MARK: - Run JAR file
+    static func runJar(
+        jarPath: URL,
+        javaHome: String,
+        jvmArgs: [String] = [],
+        appArgs: [String] = [],
+        environment: [String: String]? = nil
+    ) throws -> ProcessResult {
+        let javaExec = URL(fileURLWithPath: javaHome)
+            .appendingPathComponent("bin/java")
+
+        guard Files.isExecutable(javaExec.path) else {
+            throw ProcessError("Java executable not found: \(javaExec.path)")
+        }
+
+        var env = environment ?? ProcessInfo.processInfo.environment
+        env["JAVA_HOME"] = javaHome
+
+        var arguments = jvmArgs
+        arguments.append("-jar")
+        arguments.append(jarPath.path)
+        arguments.append(contentsOf: appArgs)
+
+        return try ProcessRunner(executableURL: javaExec)
+            .withArguments(arguments)
+            .withEnvironment(env)
+            .run()
     }
 }
