@@ -116,16 +116,83 @@ public extension Array where Element == JavaInstallation {
 
 // MARK: - Find All Java Installations
 public func findAllJavaInstallations() -> [JavaInstallation] {
-    guard let result = try? ProcessRunner.javaHome(arguments: ["-X"]),
-          result.isSuccess else {
-        return []
+    var installations: [JavaInstallation] = []
+    
+    if let result = try? ProcessRunner.javaHome(arguments: ["-X"]),
+       result.isSuccess {
+        let data = result.outputData
+        if let list = try? PropertyListSerialization.propertyList(
+            from: data, options: [], format: nil
+        ) as? [[String: Any]] {
+            installations.append(contentsOf: list.compactMap(JavaInstallation.init(dict:)))
+        }
     }
     
-    let data = result.outputData
-    guard let list = try? PropertyListSerialization.propertyList(
-        from: data, options: [], format: nil
-    ) as? [[String: Any]] else {
-        return []
+    if let homebrewJava = findHomebrewOpenJDK() {
+        installations.append(homebrewJava)
     }
-    return list.compactMap(JavaInstallation.init(dict:))
+    
+    return installations
+}
+
+// MARK: - Find Homebrew OpenJDK
+private func findHomebrewOpenJDK() -> JavaInstallation? {
+    let brewPath = FileManager.default.fileExists(atPath: "/opt/homebrew/bin/brew") 
+        ? "/opt/homebrew/bin/brew" 
+        : (FileManager.default.fileExists(atPath: "/usr/local/bin/brew") 
+            ? "/usr/local/bin/brew" 
+            : nil)
+    
+    guard let brew = brewPath,
+          let prefixResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: brew))
+            .withArguments(["--prefix", "openjdk"])
+            .run(),
+          prefixResult.isSuccess,
+          let prefix = prefixResult.output?.trimmingCharacters(in: .whitespacesAndNewlines),
+          !prefix.isEmpty else {
+        return nil
+    }
+    
+    let javaHome = prefix + "/libexec/openjdk.jdk/Contents/Home"
+    let javaExec = javaHome + "/bin/java"
+    
+    guard FileManager.default.fileExists(atPath: javaExec) else {
+        return nil
+    }
+    
+    guard let versionResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
+        .withArguments(["-version"])
+        .run(),
+          versionResult.isSuccess,
+          let versionOutput = versionResult.output else {
+        return nil
+    }
+    
+    let versionStr = versionOutput
+        .components(separatedBy: "\n").first?
+        .replacingOccurrences(of: "java version \"", with: "")
+        .replacingOccurrences(of: "\"", with: "") ?? ""
+    
+    guard let version = JavaVersion(from: versionStr) else {
+        return nil
+    }
+    
+    let arch: String
+    if let settingsResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
+        .withArguments(["-XshowSettings:all", "-version"])
+        .run(),
+       let output = settingsResult.output, output.contains("aarch64") {
+        arch = "arm64"
+    } else {
+        arch = "x86_64"
+    }
+    
+    return JavaInstallation(
+        versionStr: versionStr,
+        version: version,
+        arch: arch,
+        vendor: "Homebrew",
+        displayName: "OpenJDK (Homebrew)",
+        path: javaHome
+    )
 }

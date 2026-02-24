@@ -21,6 +21,7 @@ public struct HMCLauncher {
     }
 
     // MARK: - Handle Errors
+    @MainActor
     private static func handleError(_ error: Error) {
         guard let javaError = error as? JavaSelectionError else {
             DebugLogger.log("Unknown error: \(error)", level: .error)
@@ -60,9 +61,64 @@ public struct HMCLauncher {
 
         case .noJavaInstalled, .noCompatibleJava, .noArm64OnNewMacOS:
             DebugLogger.log(javaError.description, level: .warn)
+            if tryHandleNoJava(error: javaError) {
+                return
+            }
             showDialog(L.t("ERROR_OCCURRED", javaError.description), isWarning: true)
         }
         exit(1)
+    }
+
+    // MARK: - Handle No Java Case with Homebrew Installation
+    @MainActor
+    private static func tryHandleNoJava(error: JavaSelectionError) -> Bool {
+        guard HomebrewJava.isHomebrewInstalled() else {
+            DebugLogger.log("Homebrew not installed, cannot offer installation", level: .info)
+            return false
+        }
+
+        var userChoice: String? = nil
+        let installButton = L.t("INSTALL_BUTTON")
+        let cancelButton = L.t("CANCEL_BUTTON")
+
+        showDialog(
+            L.t("HOMEWREW_INSTALL_PROMPT", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)"),
+            title: L.t("JAVA_NOT_FOUND_TITLE"),
+            buttons: [cancelButton, installButton],
+            isWarning: true
+        ) { button in
+            userChoice = button
+        }
+
+        guard userChoice == installButton else {
+            DebugLogger.log("User declined Homebrew Java installation", level: .info)
+            return false
+        }
+
+        DebugLogger.log("Starting Homebrew OpenJDK installation...", level: .info)
+        let installResult = HomebrewJava.installOpenJDK()
+
+        switch installResult {
+        case .success:
+            DebugLogger.log("Homebrew Java installation completed, retrying...", level: .info)
+            do {
+                let javaHome = try selectJavaHome()
+                try launchHMCL(javaHome: javaHome)
+                exit(0)
+            } catch {
+                DebugLogger.log("Java still not found after installation", level: .warn)
+                return false
+            }
+
+        case .cancelled:
+            DebugLogger.log("User cancelled Homebrew installation", level: .info)
+            return false
+
+        case .failed(let code, let message):
+            DebugLogger.log("Homebrew installation failed: \(message) (code: \(code))", level: .error)
+            showDialog(L.t("INSTALL_FAILED", message), isWarning: true)
+            return false
+        }
     }
 
     // MARK: - Launch HMCL
