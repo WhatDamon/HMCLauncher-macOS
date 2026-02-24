@@ -23,8 +23,6 @@ final class JavaInfoTests: XCTestCase {
 
         XCTAssertEqual(java.versionStr, "17.0.17")
         XCTAssertEqual(java.arch, "arm64")
-        XCTAssertEqual(java.vendor, "Microsoft")
-        XCTAssertEqual(java.displayName, "Microsoft JDK 17")
         XCTAssertEqual(java.path, dict["JVMHomePath"] as? String)
         XCTAssertTrue(java.isArm64)
         XCTAssertEqual(java.version.major, 17)

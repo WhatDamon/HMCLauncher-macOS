@@ -51,8 +51,6 @@ public struct JavaVersion: Comparable, CustomStringConvertible, Sendable {
 public struct JavaInstallation: Sendable {
     public let versionStr: String
     public let arch: String
-    public let vendor: String
-    public let displayName: String
     public let path: String
     public let version: JavaVersion
 
@@ -66,16 +64,12 @@ public struct JavaInstallation: Sendable {
             let versionStr = dict["JVMVersion"] as? String,
             let version = JavaVersion(from: versionStr),
             let arch = dict["JVMArch"] as? String,
-            let vendor = dict["JVMVendor"] as? String,
-            let displayName = dict["JVMName"] as? String,
             let path = dict["JVMHomePath"] as? String
         else { return nil }
 
         self.versionStr = versionStr
         self.version = version
         self.arch = arch
-        self.vendor = vendor
-        self.displayName = displayName
         self.path = path
     }
 
@@ -84,15 +78,11 @@ public struct JavaInstallation: Sendable {
         versionStr: String,
         version: JavaVersion,
         arch: String,
-        vendor: String,
-        displayName: String,
         path: String
     ) {
         self.versionStr = versionStr
         self.version = version
         self.arch = arch
-        self.vendor = vendor
-        self.displayName = displayName
         self.path = path
     }
     #endif
@@ -191,8 +181,6 @@ private func findHomebrewOpenJDK() -> JavaInstallation? {
         versionStr: versionStr,
         version: version,
         arch: arch,
-        vendor: "Homebrew",
-        displayName: "OpenJDK (Homebrew)",
         path: javaHome
     )
 }

@@ -7,15 +7,12 @@ final class JavaLocatorTests: XCTestCase {
     // MARK: - Helper to make JavaInstallation
     private func makeJava(
         major: Int, minor: Int = 0, security: Int = 0,
-        arch: String = "arm64", vendor: String = "Vendor",
-        name: String = "JDK", path: String = "/fake/java"
+        arch: String = "arm64", path: String = "/fake/java"
     ) -> JavaInstallation {
         JavaInstallation(
             versionStr: "\(major).\(minor).\(security)",
             version: JavaVersion(major: major, minor: minor, security: security),
             arch: arch,
-            vendor: vendor,
-            displayName: name,
             path: path
         )
     }
