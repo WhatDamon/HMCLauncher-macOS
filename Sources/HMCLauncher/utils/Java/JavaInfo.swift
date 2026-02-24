@@ -73,7 +73,6 @@ public struct JavaInstallation: Sendable {
         self.path = path
     }
 
-    #if DEBUG
     public init(
         versionStr: String,
         version: JavaVersion,
@@ -85,7 +84,6 @@ public struct JavaInstallation: Sendable {
         self.arch = arch
         self.path = path
     }
-    #endif
 }
 
 // MARK: - Java Installation Queries
