@@ -79,17 +79,46 @@ public final class PathUtils {
 
     // MARK: - Resolve JAR Path
     public static func resolveJarPath(relativePath: String, fileName: String) -> URL {
+        if relativePath.hasPrefix("/") {
+            DebugLogger.log("Absolute path rejected in resolveJarPath: \(relativePath)", level: .error)
+            return workingDirectory.appendingPathComponent(fileName)
+        }
+        
+        let normalizedPath = (relativePath as NSString).standardizingPath
+        if normalizedPath.contains("..") {
+            DebugLogger.log("Path traversal attempt blocked: \(relativePath)", level: .error)
+            return workingDirectory.appendingPathComponent(fileName)
+        }
+
+        if fileName.contains("/") || fileName.contains("\\") {
+            DebugLogger.log("Invalid filename rejected: \(fileName)", level: .error)
+            return workingDirectory.appendingPathComponent(fileName)
+        }
+        
         let execDir = executableURL().deletingLastPathComponent()
         let execJar = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
-        if FileUtils.exists(at: execJar.path) {
-            return execJar
+        
+        let resolvedExecPath = execJar.path
+        let baseExecPath = execDir.path
+        if resolvedExecPath.hasPrefix(baseExecPath + "/") || resolvedExecPath == baseExecPath {
+            if FileUtils.exists(at: execJar.path) {
+                return execJar
+            }
+        } else {
+            DebugLogger.log("Path escape attempt blocked in execDir: \(resolvedExecPath)", level: .error)
         }
-
+        
         let workingJar = workingDirectory.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
-        if FileUtils.exists(at: workingJar.path) {
-            return workingJar
+        let resolvedWorkingPath = workingJar.path
+        let baseWorkingPath = workingDirectory.path
+        if resolvedWorkingPath.hasPrefix(baseWorkingPath + "/") || resolvedWorkingPath == baseWorkingPath {
+            if FileUtils.exists(at: workingJar.path) {
+                return workingJar
+            }
+        } else {
+            DebugLogger.log("Path escape attempt blocked in workingDir: \(resolvedWorkingPath)", level: .error)
         }
-
-        return workingJar
+        
+        return workingDirectory.appendingPathComponent(fileName)
     }
 }
