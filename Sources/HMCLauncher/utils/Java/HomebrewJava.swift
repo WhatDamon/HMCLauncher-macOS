@@ -9,17 +9,23 @@ public final class HomebrewJava {
 
     private init() {}
 
-    private static func brewPath() -> String {
-        FileManager.default.fileExists(atPath: "/opt/homebrew/bin/brew") 
-            ? "/opt/homebrew/bin/brew" 
-            : "/usr/local/bin/brew"
+    private static let allowedBrewPaths = [
+        "/opt/homebrew/bin/brew",
+        "/usr/local/bin/brew"
+    ]
+
+    private static func brewPath() -> String? {
+        for path in allowedBrewPaths {
+            if FileManager.default.fileExists(atPath: path),
+               FileManager.default.isExecutableFile(atPath: path) {
+                return path
+            }
+        }
+        return nil
     }
 
     public static func isHomebrewInstalled() -> Bool {
-        guard let path = Optional("/opt/homebrew/bin/brew"), 
-              FileManager.default.fileExists(atPath: path) else {
-            return FileManager.default.fileExists(atPath: "/usr/local/bin/brew")
-        }
+        guard let path = brewPath() else { return false }
         let result = try? ProcessRunner(executableURL: URL(fileURLWithPath: path))
             .withArguments(["--version"])
             .run()
@@ -27,34 +33,37 @@ public final class HomebrewJava {
     }
 
     public static func installOpenJDK() -> InstallResult {
-        let path = brewPath()
-        DebugLogger.log("Running: \(path) install openjdk", level: .info)
-        
-        let script = """
-            do shell script "\(path) install openjdk --formulae 2>&1"
-            return result
-            """
-
-        do {
-            let output = try ProcessRunner.runAppleScript(script)
-            DebugLogger.log("brew install output: \(output)", level: .debug)
-            
-            if output.contains("Already up-to-date") || output.contains("was installed") || output.isEmpty {
-                return .success
-            }
-            if output.lowercased().contains("error") || output.lowercased().contains("failed") {
-                return .failed(code: -1, message: output)
-            }
-            return .success
-        } catch {
-            DebugLogger.log("brew install error: \(error)", level: .error)
-            return .failed(code: -1, message: error.localizedDescription)
+        guard let path = brewPath() else {
+            return .failed(code: -1, message: "Homebrew not found or not in allowed paths")
         }
+
+        DebugLogger.log("Running: \(path) install openjdk --formulae", level: .info)
+
+        let result = try? ProcessRunner(executableURL: URL(fileURLWithPath: path))
+            .withArguments(["install", "openjdk", "--formulae"])
+            .run()
+
+        guard let processResult = result else {
+            return .failed(code: -1, message: "Failed to execute brew command")
+        }
+
+        let output = processResult.output ?? ""
+        let errorOutput = processResult.error ?? ""
+        let combinedOutput = output + errorOutput
+
+        DebugLogger.log("brew install output: \(combinedOutput)", level: .debug)
+
+        if processResult.isSuccess ||
+           combinedOutput.contains("Already up-to-date") ||
+           combinedOutput.contains("was installed") {
+            return .success
+        }
+
+        return .failed(code: processResult.terminationStatus, message: combinedOutput)
     }
 
     public static func getHomebrewOpenJDKPath() -> String? {
-        let path = brewPath()
-        guard FileManager.default.fileExists(atPath: path) else { return nil }
+        guard let path = brewPath() else { return nil }
         let result = try? ProcessRunner(executableURL: URL(fileURLWithPath: path))
             .withArguments(["--prefix", "openjdk"])
             .run()
