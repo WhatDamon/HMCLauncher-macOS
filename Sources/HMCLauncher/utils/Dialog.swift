@@ -34,9 +34,10 @@ public func showDialog(
         do {
             let output = try ProcessRunner.runAppleScript(script, directory: dir)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             if !output.isEmpty {
-                DebugLogger.log("Button pressed: \(output) (executed in \(dir.path))", level: .debug)
+                DebugLogger.log(
+                    "Button pressed: \(output) (executed in \(dir.path))", level: .debug)
                 onButtonPressed?(output)
             }
         } catch {

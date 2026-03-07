@@ -11,13 +11,14 @@ public final class HomebrewJava {
 
     private static let allowedBrewPaths = [
         "/opt/homebrew/bin/brew",
-        "/usr/local/bin/brew"
+        "/usr/local/bin/brew",
     ]
 
     private static func brewPath() -> String? {
         for path in allowedBrewPaths {
             if FileManager.default.fileExists(atPath: path),
-               FileManager.default.isExecutableFile(atPath: path) {
+                FileManager.default.isExecutableFile(atPath: path)
+            {
                 return path
             }
         }
@@ -53,9 +54,9 @@ public final class HomebrewJava {
 
         DebugLogger.log("brew install output: \(combinedOutput)", level: .debug)
 
-        if processResult.isSuccess ||
-           combinedOutput.contains("Already up-to-date") ||
-           combinedOutput.contains("was installed") {
+        if processResult.isSuccess || combinedOutput.contains("Already up-to-date")
+            || combinedOutput.contains("was installed")
+        {
             return .success
         }
 

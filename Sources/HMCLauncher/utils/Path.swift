@@ -20,7 +20,7 @@ public final class PathUtils {
         let candidates = [
             "bin/java",
             "Contents/Home/bin/java",
-            "Home/bin/java"
+            "Home/bin/java",
         ].map { (base as NSString).appendingPathComponent($0) }
 
         return candidates.first { FileUtils.isExecutable($0) }
@@ -47,9 +47,8 @@ public final class PathUtils {
         let macOS = contents.appendingPathComponent("MacOS", isDirectory: true)
         let infoPlist = contents.appendingPathComponent("Info.plist", isDirectory: false)
 
-        return FileUtils.exists(at: contents.path) &&
-               FileUtils.exists(at: macOS.path) &&
-               FileUtils.exists(at: infoPlist.path)
+        return FileUtils.exists(at: contents.path) && FileUtils.exists(at: macOS.path)
+            && FileUtils.exists(at: infoPlist.path)
     }
 
     public static func applicationSupportDirectory() throws -> URL {
@@ -80,10 +79,11 @@ public final class PathUtils {
     // MARK: - Resolve JAR Path
     public static func resolveJarPath(relativePath: String, fileName: String) -> URL {
         if relativePath.hasPrefix("/") {
-            DebugLogger.log("Absolute path rejected in resolveJarPath: \(relativePath)", level: .error)
+            DebugLogger.log(
+                "Absolute path rejected in resolveJarPath: \(relativePath)", level: .error)
             return workingDirectory.appendingPathComponent(fileName)
         }
-        
+
         let normalizedPath = (relativePath as NSString).standardizingPath
         if normalizedPath.contains("..") {
             DebugLogger.log("Path traversal attempt blocked: \(relativePath)", level: .error)
@@ -94,10 +94,11 @@ public final class PathUtils {
             DebugLogger.log("Invalid filename rejected: \(fileName)", level: .error)
             return workingDirectory.appendingPathComponent(fileName)
         }
-        
+
         let execDir = executableURL().deletingLastPathComponent()
-        let execJar = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
-        
+        let execJar = execDir.appendingPathComponent(relativePath).appendingPathComponent(fileName)
+            .standardizedFileURL
+
         let resolvedExecPath = execJar.path
         let baseExecPath = execDir.path
         if resolvedExecPath.hasPrefix(baseExecPath + "/") || resolvedExecPath == baseExecPath {
@@ -105,20 +106,25 @@ public final class PathUtils {
                 return execJar
             }
         } else {
-            DebugLogger.log("Path escape attempt blocked in execDir: \(resolvedExecPath)", level: .error)
+            DebugLogger.log(
+                "Path escape attempt blocked in execDir: \(resolvedExecPath)", level: .error)
         }
-        
-        let workingJar = workingDirectory.appendingPathComponent(relativePath).appendingPathComponent(fileName).standardizedFileURL
+
+        let workingJar = workingDirectory.appendingPathComponent(relativePath)
+            .appendingPathComponent(fileName).standardizedFileURL
         let resolvedWorkingPath = workingJar.path
         let baseWorkingPath = workingDirectory.path
-        if resolvedWorkingPath.hasPrefix(baseWorkingPath + "/") || resolvedWorkingPath == baseWorkingPath {
+        if resolvedWorkingPath.hasPrefix(baseWorkingPath + "/")
+            || resolvedWorkingPath == baseWorkingPath
+        {
             if FileUtils.exists(at: workingJar.path) {
                 return workingJar
             }
         } else {
-            DebugLogger.log("Path escape attempt blocked in workingDir: \(resolvedWorkingPath)", level: .error)
+            DebugLogger.log(
+                "Path escape attempt blocked in workingDir: \(resolvedWorkingPath)", level: .error)
         }
-        
+
         return workingDirectory.appendingPathComponent(fileName)
     }
 }

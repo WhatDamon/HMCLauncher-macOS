@@ -81,18 +81,18 @@ public final class ProcessRunner {
     }
 }
 
-public extension ProcessRunner {
-    static func javaHome(arguments: [String] = []) throws -> ProcessResult {
+extension ProcessRunner {
+    public static func javaHome(arguments: [String] = []) throws -> ProcessResult {
         try ProcessRunner(executableURL: URL(fileURLWithPath: "/usr/libexec/java_home"))
             .withArguments(arguments).run()
     }
 
-    static func openURL(_ urlString: String) throws {
+    public static func openURL(_ urlString: String) throws {
         _ = try ProcessRunner(executableURL: URL(fileURLWithPath: "/usr/bin/open"))
             .withArguments([urlString]).run()
     }
 
-    static func runAppleScript(_ script: String, directory: URL? = nil) throws -> String {
+    public static func runAppleScript(_ script: String, directory: URL? = nil) throws -> String {
         let runner = ProcessRunner(executableURL: URL(fileURLWithPath: "/usr/bin/osascript"))
             .withArguments(["-e", script])
         if let dir = directory { runner.inDirectory(dir) }
@@ -100,7 +100,7 @@ public extension ProcessRunner {
     }
 
     // MARK: - Run JAR file
-    static func runJar(
+    public static func runJar(
         jarPath: URL,
         javaHome: String,
         jvmArgs: [String] = [],

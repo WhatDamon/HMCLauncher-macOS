@@ -19,12 +19,16 @@ public final class FileUtils {
         fileManager.isExecutableFile(atPath: path)
     }
 
-    public static func createDirectory(at url: URL, withIntermediateDirectories: Bool = true) throws {
-        try fileManager.createDirectory(at: url, withIntermediateDirectories: withIntermediateDirectories)
+    public static func createDirectory(at url: URL, withIntermediateDirectories: Bool = true) throws
+    {
+        try fileManager.createDirectory(
+            at: url, withIntermediateDirectories: withIntermediateDirectories)
     }
 
     public static func applicationSupport() throws -> URL {
-        try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        try fileManager.url(
+            for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil,
+            create: true)
     }
 
     public static var tempDirectory: URL { fileManager.temporaryDirectory }
@@ -47,6 +51,6 @@ public final class FileUtils {
 }
 
 // MARK: - URL Extensions
-public extension URL {
-    var parent: URL { deletingLastPathComponent() }
+extension URL {
+    public var parent: URL { deletingLastPathComponent() }
 }

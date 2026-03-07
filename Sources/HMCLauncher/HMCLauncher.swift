@@ -77,7 +77,7 @@ public struct HMCLauncher {
             return false
         }
 
-        var userChoice: String? = nil
+        var userChoice: String?
         let installButton = L.t("INSTALL_BUTTON")
         let cancelButton = L.t("CANCEL_BUTTON")
 
