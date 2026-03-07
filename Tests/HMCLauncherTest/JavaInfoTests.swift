@@ -81,7 +81,7 @@ final class JavaInfoTests: XCTestCase {
         return try! XCTUnwrap(JavaVersion(from: str))
     }
 
-    // MARK: - Array Helpers Tests
+    // MARK: - Filtering and Sorting Tests
     func testFilteringAndSorting() {
         let javaList = [
             makeJava(dict: [
@@ -98,17 +98,23 @@ final class JavaInfoTests: XCTestCase {
             ]),
             makeJava(dict: [
                 "JVMEnabled": true, "JVMVersion": "1.8.0_462", "JVMArch": "x86_64",
-                "JVMVendor": "Eclipse Temurin", "JVMName": "Eclipse Temurin 8", "JVMHomePath": "/path4",
+                "JVMVendor": "Eclipse Temurin", "JVMName": "Eclipse Temurin 8",
+                "JVMHomePath": "/path4",
             ]),
         ]
 
-        let sorted = javaList.sortedByVersionDescending()
+        // Test sorting
+        let sorted = javaList.sorted { $0.version > $1.version }
         XCTAssertEqual(sorted.map { $0.version.major }, [21, 18, 17, 8])
 
-        let filteredMin18 = javaList.filtered(byMinVersion: JavaVersion(major: 18))
+        // Test filtering by min version
+        let filteredMin18 = javaList.filter { $0.version.major >= 18 }
         XCTAssertEqual(filteredMin18.map { $0.version.major }, [21, 18])
 
-        let filteredArm64 = javaList.filtered(byArch: "arm64")
+        // Test filtering by architecture
+        let filteredArm64 = javaList.filter {
+            $0.arch.trimmingCharacters(in: .whitespaces).lowercased() == "arm64"
+        }
         XCTAssertEqual(filteredArm64.map { $0.arch }, ["arm64", "arm64"])
     }
 }

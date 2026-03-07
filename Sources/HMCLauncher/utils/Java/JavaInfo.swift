@@ -13,7 +13,8 @@ public struct JavaVersion: Comparable, CustomStringConvertible, Sendable {
     }
 
     public init?(from string: String) {
-        let parts = string
+        let parts =
+            string
             .replacingOccurrences(of: "_", with: ".")
             .replacingOccurrences(of: "-", with: ".")
             .split(separator: ".")
@@ -86,28 +87,14 @@ public struct JavaInstallation: Sendable {
     }
 }
 
-// MARK: - Java Installation Queries
-public extension Array where Element == JavaInstallation {
-    func sortedByVersionDescending() -> [Element] {
-        sorted { $0.version > $1.version }
-    }
-
-    func filtered(byMinVersion v: JavaVersion) -> [Element] {
-        self.filter { $0.version >= v }
-    }
-
-    func filtered(byArch a: String) -> [Element] {
-        let target = a.trimmingCharacters(in: .whitespaces).lowercased()
-        return self.filter { $0.arch.trimmingCharacters(in: .whitespaces).lowercased() == target }
-    }
-}
-
 // MARK: - Find All Java Installations
 public func findAllJavaInstallations() -> [JavaInstallation] {
     var installations: [JavaInstallation] = []
-    
+
+    // 1. Find system Java via /usr/libexec/java_home
     if let result = try? ProcessRunner.javaHome(arguments: ["-X"]),
-       result.isSuccess {
+        result.isSuccess
+    {
         let data = result.outputData
         if let list = try? PropertyListSerialization.propertyList(
             from: data, options: [], format: nil
@@ -115,70 +102,56 @@ public func findAllJavaInstallations() -> [JavaInstallation] {
             installations.append(contentsOf: list.compactMap(JavaInstallation.init(dict:)))
         }
     }
-    
-    if let homebrewJava = findHomebrewOpenJDK() {
-        installations.append(homebrewJava)
-    }
-    
-    return installations
-}
 
-// MARK: - Find Homebrew OpenJDK
-private func findHomebrewOpenJDK() -> JavaInstallation? {
-    let brewPath = FileManager.default.fileExists(atPath: "/opt/homebrew/bin/brew") 
-        ? "/opt/homebrew/bin/brew" 
-        : (FileManager.default.fileExists(atPath: "/usr/local/bin/brew") 
-            ? "/usr/local/bin/brew" 
-            : nil)
-    
-    guard let brew = brewPath,
-          let prefixResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: brew))
-            .withArguments(["--prefix", "openjdk"])
+    // 2. Find Homebrew OpenJDK
+    if let homebrewPath = HomebrewJava.getHomebrewOpenJDKPath() {
+        let javaHome = homebrewPath + "/libexec/openjdk.jdk/Contents/Home"
+        let javaExec = javaHome + "/bin/java"
+
+        guard FileManager.default.fileExists(atPath: javaExec) else {
+            return installations
+        }
+
+        guard
+            let versionResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
+                .withArguments(["-version"])
+                .run(),
+            versionResult.isSuccess,
+            let versionOutput = versionResult.output
+        else {
+            return installations
+        }
+
+        let versionStr =
+            versionOutput
+            .components(separatedBy: "\n").first?
+            .replacingOccurrences(of: "java version \"", with: "")
+            .replacingOccurrences(of: "\"", with: "") ?? ""
+
+        guard let version = JavaVersion(from: versionStr) else {
+            return installations
+        }
+
+        // Detect architecture
+        let arch: String
+        if let settingsResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
+            .withArguments(["-XshowSettings:all", "-version"])
             .run(),
-          prefixResult.isSuccess,
-          let prefix = prefixResult.output?.trimmingCharacters(in: .whitespacesAndNewlines),
-          !prefix.isEmpty else {
-        return nil
+            let output = settingsResult.output, output.contains("aarch64")
+        {
+            arch = "arm64"
+        } else {
+            arch = "x86_64"
+        }
+
+        installations.append(
+            JavaInstallation(
+                versionStr: versionStr,
+                version: version,
+                arch: arch,
+                path: javaHome
+            ))
     }
-    
-    let javaHome = prefix + "/libexec/openjdk.jdk/Contents/Home"
-    let javaExec = javaHome + "/bin/java"
-    
-    guard FileManager.default.fileExists(atPath: javaExec) else {
-        return nil
-    }
-    
-    guard let versionResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
-        .withArguments(["-version"])
-        .run(),
-          versionResult.isSuccess,
-          let versionOutput = versionResult.output else {
-        return nil
-    }
-    
-    let versionStr = versionOutput
-        .components(separatedBy: "\n").first?
-        .replacingOccurrences(of: "java version \"", with: "")
-        .replacingOccurrences(of: "\"", with: "") ?? ""
-    
-    guard let version = JavaVersion(from: versionStr) else {
-        return nil
-    }
-    
-    let arch: String
-    if let settingsResult = try? ProcessRunner(executableURL: URL(fileURLWithPath: javaExec))
-        .withArguments(["-XshowSettings:all", "-version"])
-        .run(),
-       let output = settingsResult.output, output.contains("aarch64") {
-        arch = "arm64"
-    } else {
-        arch = "x86_64"
-    }
-    
-    return JavaInstallation(
-        versionStr: versionStr,
-        version: version,
-        arch: arch,
-        path: javaHome
-    )
+
+    return installations
 }

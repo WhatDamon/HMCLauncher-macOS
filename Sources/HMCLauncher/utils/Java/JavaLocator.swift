@@ -14,7 +14,8 @@ public enum JavaHomeSource: Sendable {
 // MARK: - Enum: Errors
 public enum JavaSelectionError: Error, CustomStringConvertible {
     case invalidJavaHome
-    case userSpecifiedJavaVersionTooLow(path: String, detectedVersion: String, required: JavaVersion)
+    case userSpecifiedJavaVersionTooLow(
+        path: String, detectedVersion: String, required: JavaVersion)
     case noJavaInstalled
     case newestTooLow(found: JavaInstallation, required: JavaVersion)
     case noCompatibleJava(arch: String, minVer: JavaVersion)
@@ -37,7 +38,8 @@ public enum JavaSelectionError: Error, CustomStringConvertible {
 }
 
 // MARK: - Validate Java at Path
-public func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) throws -> JavaHomeSource {
+public func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) throws -> JavaHomeSource
+{
     guard let java = PathUtils.findJavaExecutable(base: basePath) else {
         throw JavaSelectionError.invalidJavaHome
     }
@@ -72,31 +74,49 @@ public func validateJavaAtPath(_ basePath: String, minVersion: JavaVersion) thro
 // MARK: - Select Java Home
 @MainActor
 public func selectJavaHome(
-    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)") 
+    minVersion: JavaVersion = JavaVersion(from: "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)")
         ?? JavaVersion(major: LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)
 ) throws -> JavaHomeSource {
 
-    if let path = LauncherEnv.ENV["HMCL_JAVA_HOME"], !path.trimmingCharacters(in: .whitespaces).isEmpty {
+    if let path = LauncherEnv.ENV["HMCL_JAVA_HOME"],
+        !path.trimmingCharacters(in: .whitespaces).isEmpty
+    {
         return try validateJavaAtPath(path, minVersion: minVersion)
     }
 
     let all = _findAllJavaInstallations()
     guard !all.isEmpty else { throw JavaSelectionError.noJavaInstalled }
-    guard let newest = all.sortedByVersionDescending().first, newest.version >= minVersion else {
-        throw JavaSelectionError.newestTooLow(found: all.first!, required: minVersion)
+
+    let sorted = all.sorted { $0.version > $1.version }
+    guard let newest = sorted.first, newest.version >= minVersion else {
+        throw JavaSelectionError.newestTooLow(found: sorted.first!, required: minVersion)
     }
 
     let arch = _currentArch()
     let darwin = _getDarwinMajorVersion()
     let allowX86 = arch == "arm64" && darwin < 27
 
-    let candidates = all.filtered(byMinVersion: minVersion)
+    let candidates = all.filter { $0.version >= minVersion }
 
-    if let native = candidates.filtered(byArch: arch).sortedByVersionDescending().first {
+    // Try native architecture
+    let nativeArch = arch.trimmingCharacters(in: .whitespaces).lowercased()
+    if let native =
+        candidates
+        .filter({ $0.arch.trimmingCharacters(in: .whitespaces).lowercased() == nativeArch })
+        .sorted(by: { $0.version > $1.version })
+        .first
+    {
         return .autoDetected(path: native.path)
     }
 
-    if allowX86, let x86 = candidates.filtered(byArch: "x86_64").sortedByVersionDescending().first {
+    // Try x86 fallback on arm64 macOS <= 27
+    if allowX86,
+        let x86 =
+            candidates
+            .filter({ $0.arch.trimmingCharacters(in: .whitespaces).lowercased() == "x86_64" })
+            .sorted(by: { $0.version > $1.version })
+            .first
+    {
         return .autoDetected(path: x86.path)
     }
 
