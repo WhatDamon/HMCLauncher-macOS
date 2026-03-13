@@ -109,6 +109,7 @@ public func findAllJavaInstallations() -> [JavaInstallation] {
         let javaExec = javaHome + "/bin/java"
 
         guard FileManager.default.fileExists(atPath: javaExec) else {
+            logInstallations(installations)
             return installations
         }
 
@@ -119,6 +120,7 @@ public func findAllJavaInstallations() -> [JavaInstallation] {
             versionResult.isSuccess,
             let versionOutput = versionResult.output
         else {
+            logInstallations(installations)
             return installations
         }
 
@@ -129,6 +131,7 @@ public func findAllJavaInstallations() -> [JavaInstallation] {
             .replacingOccurrences(of: "\"", with: "") ?? ""
 
         guard let version = JavaVersion(from: versionStr) else {
+            logInstallations(installations)
             return installations
         }
 
@@ -153,5 +156,24 @@ public func findAllJavaInstallations() -> [JavaInstallation] {
             ))
     }
 
+    logInstallations(installations)
     return installations
 }
+
+// DEBUG: Log found Java installations
+#if DEBUG
+private func logInstallations(_ installations: [JavaInstallation]) {
+    if installations.isEmpty {
+        DebugLogger.log("No Java installations found", level: .debug)
+    } else {
+        DebugLogger.log("Found \(installations.count) Java installation(s):", level: .debug)
+        for (index, java) in installations.enumerated() {
+            DebugLogger.log("  [\(index)] \(java.versionStr) (\(java.arch)) - \(java.path)", level: .debug)
+        }
+    }
+}
+#else
+private func logInstallations(_ installations: [JavaInstallation]) {
+    // No-op in release build
+}
+#endif
