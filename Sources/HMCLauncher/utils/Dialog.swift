@@ -1,12 +1,13 @@
 import Foundation
 
-// MARK: - Function: Escape string for AppleScript
 private func escapeForAppleScript(_ str: String) -> String {
     str.replacingOccurrences(of: "\\", with: "\\\\")
         .replacingOccurrences(of: "\"", with: "\\\"")
+        .replacingOccurrences(of: "\n", with: "\\n")
+        .replacingOccurrences(of: "\r", with: "\\r")
+        .replacingOccurrences(of: "\t", with: "\\t")
 }
 
-// MARK: - Function: Show Error Dialog
 public func showDialog(
     _ message: String,
     title: String = L.t("ERROR_TITLE"),
@@ -39,6 +40,7 @@ public func showDialog(
                 DebugLogger.log(
                     "Button pressed: \(output) (executed in \(dir.path))", level: .debug)
                 onButtonPressed?(output)
+                return
             }
         } catch {
             DebugLogger.log("Failed to show dialog in \(dir.path): \(error)", level: .error)
