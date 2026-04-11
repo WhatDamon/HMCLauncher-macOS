@@ -1,0 +1,64 @@
+name: Code Tests
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  test:
+    name: Run Swift Tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: fwal/setup-swift@v2
+        with:
+          swift-version: '6.1.0'
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          mkdir -p test-results
+
+          # Run tests and capture output
+          xcodebuild -scheme HMCLauncher -destination 'platform=macOS' test | tee test-results/results.log
+
+          # Count passed and failed tests
+          PASSED=$(grep -c "passed" test-results/results.log || echo 0)
+          FAILED=$(grep -c "failed" test-results/results.log || echo 0)
+
+          # Create Markdown summary
+          echo "## 🧪 HMCLauncher Test Results" > test-results/summary.md
+          echo "- ✅ Passed: $PASSED" >> test-results/summary.md
+          echo "- ❌ Failed: $FAILED" >> test-results/summary.md
+
+          # Show failed tests in detail
+          if [ "$FAILED" -gt 0 ]; then
+              echo "" >> test-results/summary.md
+              echo "### Failed Tests" >> test-results/summary.md
+              grep -E "XCTFail|failed" test-results/results.log | sed 's/^/- /' >> test-results/summary.md
+          fi
+
+          # Collapsible full log
+          echo "" >> test-results/summary.md
+          echo "<details>" >> test-results/summary.md
+          echo "<summary>Click to expand full test log</summary>" >> test-results/summary.md
+          echo "" >> test-results/summary.md
+          cat test-results/results.log >> test-results/summary.md
+          echo "</details>" >> test-results/summary.md
+
+          # Append to GitHub Job Summary (shown on Job homepage)
+          cat test-results/summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload test log
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test-results/results.log
