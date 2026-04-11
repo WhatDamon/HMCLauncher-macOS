@@ -20,6 +20,11 @@ public struct ProcessResult: Sendable {
     public var isSuccess: Bool { terminationStatus == 0 }
 }
 
+private final class DataHolder: @unchecked Sendable {
+    var data: Data
+    init() { self.data = Data() }
+}
+
 public final class ProcessRunner {
     public let executable: URL
     public var arguments: [String] = []
@@ -66,13 +71,32 @@ public final class ProcessRunner {
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
+        let outputHolder = DataHolder()
+        let errorHolder = DataHolder()
+        let group = DispatchGroup()
+        let queue = DispatchQueue(label: "com.hmcl.processreader")
+
         try process.run()
+
+        group.enter()
+        queue.async {
+            outputHolder.data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+            group.leave()
+        }
+
+        group.enter()
+        queue.async {
+            errorHolder.data = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            group.leave()
+        }
+
         process.waitUntilExit()
+        group.wait()
 
         return ProcessResult(
             terminationStatus: process.terminationStatus,
-            outputData: outputPipe.fileHandleForReading.readDataToEndOfFile(),
-            errorData: errorPipe.fileHandleForReading.readDataToEndOfFile()
+            outputData: outputHolder.data,
+            errorData: errorHolder.data
         )
     }
 
@@ -99,7 +123,6 @@ extension ProcessRunner {
         return try runner.runOutput()
     }
 
-    // MARK: - Run JAR file
     public static func runJar(
         jarPath: URL,
         javaHome: String,
