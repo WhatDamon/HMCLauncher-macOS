@@ -1,0 +1,64 @@
+name: SwiftLint
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  swiftlint:
+    name: SwiftLint Check
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        id: lint
+        run: |
+          # Run SwiftLint and capture output
+          swiftlint 2>&1 | tee swiftlint_output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          # Extract violation counts
+          if grep -q "violations" swiftlint_output.txt; then
+            VIOLATIONS=$(grep "violations" swiftlint_output.txt | grep -oP '\d+' | head -1)
+            SERIOUS=$(grep "serious" swiftlint_output.txt | grep -oP '\d+' | head -1 || echo "0")
+          else
+            VIOLATIONS="0"
+            SERIOUS="0"
+          fi
+          
+          echo "VIOLATIONS=$VIOLATIONS" >> $GITHUB_ENV
+          echo "SERIOUS=$SERIOUS" >> $GITHUB_ENV
+
+      - name: Create Summary
+        run: |
+          VIOLATIONS="${VIOLATIONS:-0}"
+          SERIOUS="${SERIOUS:-0}"
+          
+          {
+            echo "## 🔍 SwiftLint Results"
+            echo ""
+            if [ "$VIOLATIONS" = "0" ]; then
+              echo "✅ No violations found"
+            else
+              echo "⚠️ Found **$VIOLATIONS** violations ($SERIOUS serious)"
+              echo ""
+              echo "### Details"
+              echo '```'
+              cat swiftlint_output.txt
+              echo '```'
+            fi
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if serious violations
+        if: env.SERIOUS > 0
+        run: exit 1

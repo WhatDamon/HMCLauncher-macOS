@@ -1,0 +1,37 @@
+disabled_rules:
+  - trailing_whitespace
+  - identifier_name
+  - type_name
+  - opening_brace
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - explicit_init
+  - first_where
+  - redundant_nil_coalescing
+  - contains_over_first_not_nil
+  - prefer_self_type_over_type_of_self
+  - contains_over_filter_is_empty
+  - contains_over_range_nil_comparison
+  - contains_over_filter_count
+
+excluded:
+  - .build
+  - dist
+  - Tests
+
+line_length:
+  warning: 150
+
+function_body_length:
+  warning: 80
+
+type_body_length:
+  warning: 400
+
+file_length:
+  warning: 600
+
+cyclomatic_complexity:
+  warning: 15

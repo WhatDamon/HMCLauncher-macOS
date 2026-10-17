@@ -2,83 +2,152 @@ import Foundation
 
 // MARK: - Main Entry Point
 @main
-struct HMCLauncher {
-    static func main() {
-        // Start
-        DebugLogger.log("HMCLauncher-macOS \(launcherVer) Start")
+public struct HMCLauncher {
+    public static func main() {
+        MiscUtils.basicInfoOutput()
 
-        // Resolve JAVA_HOME
-        var javaHome: String? = nil
-
-        // HMCL_JAVA_HOME first
-        if let hmclJavaHome: String = env["HMCL_JAVA_HOME"], !hmclJavaHome.isEmpty {
-            if FileManager.default.fileExists(atPath: hmclJavaHome) {
-                javaHome = hmclJavaHome
-            } else {
-                showDialog(
-                    L.t("HMCL_JAVA_HOME_INVALID"),
-                    title: L.t("WARNING_TITLE"),
-                    isWarning: true
-                )
-            }
+        guard LauncherEnv.DARWIN_VER >= 19 else {
+            DebugLogger.log("Unsupported macOS: Darwin \(LauncherEnv.DARWIN_VER)", level: .error)
+            showDialog(L.t("UNSUPPPRTED_MACOS"), title: L.t("WARNING_TITLE"), isWarning: true)
+            exit(1)
         }
 
-        // Fallback or no HMCL_JAVA_HOME
-        if javaHome == nil {
-            javaHome = env["JAVA_HOME"]
-            if javaHome == nil || javaHome!.isEmpty
-                || !FileManager.default.fileExists(atPath: javaHome!)
-            {
-                javaHome = resolveJavaHome()
-            }
+        do {
+            let javaHome = try selectJavaHome()
+            try launchHMCL(javaHome: javaHome)
+        } catch {
+            handleError(error)
+        }
+    }
+
+    // MARK: - Handle Errors
+    @MainActor
+    private static func handleError(_ error: Error) {
+        guard let javaError = error as? JavaSelectionError else {
+            DebugLogger.log("Unknown error: \(error)", level: .error)
+            exit(1)
         }
 
-        // Ensure javaHome is valid
-        if !FileManager.default.fileExists(atPath: javaHome!) {
+        switch javaError {
+        case .invalidJavaHome:
+            DebugLogger.log("Invalid JAVA_HOME", level: .warn)
+            showDialog(L.t("HMCL_JAVA_HOME_INVALID"), title: L.t("WARNING_TITLE"), isWarning: true)
+
+        case .userSpecifiedJavaVersionTooLow(_, let detected, _):
+            DebugLogger.log("Java \(detected) < required \(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", level: .warn)
             showDialog(
-                L.t("JAVA_HOME_MISSING", "\(hmclExpectedJavaMajorVersion)"),
-                title: L.t("JAVA_MISSING_TITLE"),
-                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")]
-            ) { button in
-                if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    downloadJava()
-                }
-            }
-            return
-        }
-
-        // Find java executable
-        guard let javaExec: String = findJavaExecutable(javaHome) else {
-            showDialog(L.t("ERROR_OCCURRED", "No java executable found!"), isWarning: true)
-            return
-        }
-
-        // Get Java major version
-        let javaMajorVersion: Int = getJavaMajorVersion(javaExec) ?? 0
-
-        // Validate Java version
-        if javaMajorVersion < hmclExpectedJavaMajorVersion {
-            showDialog(
-                L.t("JAVA_TOO_OLD", "\(hmclExpectedJavaMajorVersion)", "\(javaMajorVersion)"),
+                L.t("JAVA_TOO_OLD", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", detected),
                 title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
                 buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
                 isWarning: true
             ) { button in
                 if button == L.t("DOWNLOAD_JAVA_BUTTON") {
-                    downloadJava()
+                    MiscUtils.downloadJava()
                 }
             }
-            return
+
+        case .newestTooLow(let installation, _):
+            DebugLogger.log("Java \(installation.versionStr) < required \(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", level: .warn)
+            showDialog(
+                L.t("JAVA_TOO_OLD", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)", installation.versionStr),
+                title: L.t("JAVA_NOT_SUPPORTED_TITLE"),
+                buttons: [L.t("DOWNLOAD_JAVA_BUTTON"), L.t("CANCEL_BUTTON")],
+                isWarning: true
+            ) { button in
+                if button == L.t("DOWNLOAD_JAVA_BUTTON") {
+                    MiscUtils.downloadJava()
+                }
+            }
+
+        case .noJavaInstalled, .noCompatibleJava, .noArm64OnNewMacOS:
+            DebugLogger.log(javaError.description, level: .warn)
+            if tryHandleNoJava(error: javaError) {
+                return
+            }
+            showDialog(L.t("ERROR_OCCURRED", javaError.description), isWarning: true)
+        }
+        exit(1)
+    }
+
+    // MARK: - Handle No Java Case with Homebrew Installation
+    @MainActor
+    private static func tryHandleNoJava(error: JavaSelectionError) -> Bool {
+        guard HomebrewJava.isHomebrewInstalled() else {
+            DebugLogger.log("Homebrew not installed, cannot offer installation", level: .info)
+            return false
         }
 
-        // For test propose
-        print("\(javaHome!), \(javaExec), \(javaMajorVersion)")
+        var userChoice: String?
+        let installButton = L.t("INSTALL_BUTTON")
+        let cancelButton = L.t("CANCEL_BUTTON")
 
-        // Check and Run HMCL
-        if checkLauncherExistence() == false {
-            showDialog(L.t("CANNOT_FIND_HMCL"))
-        } else {
-            runLauncher(javaExec)
+        showDialog(
+            L.t("HOMEWREW_INSTALL_PROMPT", "\(LauncherEnv.HMCL_EXPECTED_JAVA_MAJOR_VERSION)"),
+            title: L.t("JAVA_NOT_FOUND_TITLE"),
+            buttons: [cancelButton, installButton],
+            isWarning: true
+        ) { button in
+            userChoice = button
         }
+
+        guard userChoice == installButton else {
+            DebugLogger.log("User declined Homebrew Java installation", level: .info)
+            return false
+        }
+
+        DebugLogger.log("Starting Homebrew OpenJDK installation...", level: .info)
+        let installResult = HomebrewJava.installOpenJDK()
+
+        switch installResult {
+        case .success:
+            DebugLogger.log("Homebrew Java installation completed, retrying...", level: .info)
+            do {
+                let javaHome = try selectJavaHome()
+                try launchHMCL(javaHome: javaHome)
+                exit(0)
+            } catch {
+                DebugLogger.log("Java still not found after installation", level: .warn)
+                return false
+            }
+
+        case .cancelled:
+            DebugLogger.log("User cancelled Homebrew installation", level: .info)
+            return false
+
+        case .failed(let code, let message):
+            DebugLogger.log("Homebrew installation failed: \(message) (code: \(code))", level: .error)
+            showDialog(L.t("INSTALL_FAILED", message), isWarning: true)
+            return false
+        }
+    }
+
+    // MARK: - Launch HMCL
+    private static func launchHMCL(javaHome source: JavaHomeSource) throws {
+        let javaHome: String
+        switch source {
+        case .environment(let path):
+            DebugLogger.log("Using JAVA_HOME: \(path)", level: .info)
+            javaHome = path
+        case .autoDetected(let path):
+            DebugLogger.log("Auto-detected JAVA_HOME: \(path)", level: .info)
+            javaHome = path
+        }
+
+        let jarPath = PathUtils.resolveJarPath(relativePath: LauncherEnv.HMCL_JAR_PATH, fileName: LauncherEnv.HMCL_JAR_NAME)
+
+        guard FileUtils.exists(at: jarPath.path) else {
+            DebugLogger.log("JAR not found: \(jarPath.path)", level: .error)
+            showDialog(L.t("CANNOT_FIND_HMCL"), isWarning: true)
+            exit(1)
+        }
+
+        let result = try ProcessRunner.runJar(
+            jarPath: jarPath,
+            javaHome: javaHome,
+            jvmArgs: LauncherEnv.JVM_ARGS,
+            appArgs: []
+        )
+
+        DebugLogger.log("HMCL exited with status: \(result.terminationStatus)", level: .info)
     }
 }

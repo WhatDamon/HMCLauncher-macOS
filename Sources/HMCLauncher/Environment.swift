@@ -1,14 +1,57 @@
 import Foundation
 
-// MARK: - Global Environment and Arguments
-let env: [String: String] = ProcessInfo.processInfo.environment
-let args: [String] = CommandLine.arguments
-let isDebug: Bool = args.contains("--debug")
-let launcherVer: String = "3.8.0"
+// MARK: - Environment & Arguments
+public struct LauncherEnv {
+    // User / Build Configurable Values
 
-// MARK: - HMCL Expection
-let hmclExpectedJavaMajorVersion: Int = 17
-let launcherPath: String = "../Resources/HMCL.jar"
-let urlHMCLGithubPage: String = "https://github.com/HMCL-dev/HMCL"
-let urlJavaDownloadLinkArm64: String = "https://docs.hmcl.net/downloads/macos/arm64.html"
-let urlJavaDownloadLinkX86_64: String = "https://docs.hmcl.net/downloads/macos/x86_64.html"
+    public static let LAUNCHER_VER = "3.8.0"
+    public static let HMCL_EXPECTED_JAVA_MAJOR_VERSION = 17
+    public static let HMCL_JAR_PATH = "../Resources"
+    public static let HMCL_JAR_NAME = "HMCL.jar"
+
+    public static let urlHMCLGithubPage = "https://github.com/HMCL-dev/HMCL"
+    public static let urlJavaDownloadLinkArm64 = "https://docs.hmcl.net/downloads/macos/arm64.html"
+    public static let urlJavaDownloadLinkX86_64 = "https://docs.hmcl.net/downloads/macos/x86_64.html"
+
+    // Raw Process State
+    public static let ENV = ProcessInfo.processInfo.environment
+    public static let ARGS = CommandLine.arguments
+
+    // Platform Information
+    public static let IS_INSIDE_APP_BUNDLE = PathUtils.isRunningInsideAppBundle()
+    public static let DARWIN_VER = SystemUtils.getDarwinMajorVersion()
+    public static let MACOS_VER = SystemUtils.macOSVersionString(fromDarwin: DARWIN_VER)
+
+    // Debug Mode
+    public static let IS_DEBUG: Bool = {
+        #if DEBUG
+            return true
+        #else
+            return ARGS.contains("--debug")
+        #endif
+    }()
+
+    // JVM Parameters
+    public static let JVM_ARGS: [String] = {
+        let envArgs = JVMArgsParser.parse(from: ENV["HMCL_JAVA_OPTS"])
+        let cliArgs = JVMArgsParser.parse(from: ARGS)
+
+        var merged: [String: String] = [:]
+
+        for arg in envArgs {
+            merged[JVMArgsParser.argKey(arg)] = arg
+        }
+
+        for arg in cliArgs {
+            merged[JVMArgsParser.argKey(arg)] = arg
+        }
+
+        return Array(merged.values)
+    }()
+
+    // Logging
+    public static let logURL: URL? = {
+        guard IS_DEBUG else { return nil }
+        return try? PathUtils.newLogFileURL()
+    }()
+}
